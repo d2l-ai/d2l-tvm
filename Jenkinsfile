@@ -45,7 +45,7 @@ stage("Build and Publish") {
       conda activate ${ENV_NAME}
       """
 
-      if (env.BRANCH_NAME == 'master) {
+      if (env.BRANCH_NAME == 'master') {
         sh label:"Publish", script:"""set -ex
         conda activate ${ENV_NAME}
         d2lbook deploy html # pkg pdf
