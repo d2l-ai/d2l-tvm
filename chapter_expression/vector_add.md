@@ -37,11 +37,6 @@ type(fadd)
 tvm.nd.array(a).dtype
 ```
 
-```{.python .input  n=62}
-e = tvm.nd.array(e)
-fadd(tvm.nd.array(a), tvm.nd.array(b), e)
-```
-
 ```{.python .input  n=82}
 def eval_mod(mod, *args):
     tvm_args = [tvm.nd.array(arr) for arr in args]
