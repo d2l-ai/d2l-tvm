@@ -11,7 +11,7 @@ stage("Build and Publish") {
       rm -rf ~/miniconda3/envs/${ENV_NAME}
       conda create -n ${ENV_NAME} pip python=3.7.3 -y
       conda activate ${ENV_NAME}
-
+      pip install https://s3-us-west-2.amazonaws.com/tvm.d2l.ai/tvm-0.6.dev0-cp37-cp37m-linux_x86_64.whl
       pip install git+https://github.com/d2l-ai/d2l-book
       python setup.py develop
       pip list
@@ -45,7 +45,7 @@ stage("Build and Publish") {
       conda activate ${ENV_NAME}
       """
 
-      if (env.BRANCH_NAME == 'numpy2') {
+      if (env.BRANCH_NAME == 'master) {
         sh label:"Publish", script:"""set -ex
         conda activate ${ENV_NAME}
         d2lbook deploy html # pkg pdf
