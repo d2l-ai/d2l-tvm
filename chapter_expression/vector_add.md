@@ -1,73 +1,117 @@
-# Add Two Vector
+# Vector Addition 
 
-```{.python .input  n=9}
+Let's begin with a simple example: summing two vectors. It's straightforward in NumPy.
+
+```{.python .input  n=13}
 import numpy as np
-import tvm
 
-def add(A, B, C):
-    n = len(A)
-    for i in range(n):
-        C[i] = A[i] + B[i]
-```
-
-```{.python .input  n=58}
 n = 100
 a = np.random.normal(size=n).astype(np.float32)
 b = np.random.normal(size=n).astype(np.float32)
-c = np.zeros(shape=n, dtype=np.float32)
-add(a, b, c)
+c = a + b
 ```
 
-## Implement in TVM
+Here we create two random vectors with length 100, and sum them element-wisely. Note that NumPy in default use 64-bit floating-points or 64-bit integers. We often use 32-bit floating point in deep learning, so we explicitly cast the data type. 
 
-```{.python .input  n=60}
-n = tvm.var("n")
-A = tvm.placeholder((n,), name='A')
-B = tvm.placeholder((n,), name='B')
-C = tvm.compute(A.shape, lambda i: A[i] + B[i], name="C")
+Despite that we can use the build-in `+` operator in NumPy, let's try to implement it by only use scalar operators. The following function uses a for-loop to iterate every element, and then sum two elements with the scalar `+` operator.
+
+```{.python .input  n=14}
+def vector_add(a, b, c):
+    n = len(a)
+    for i in range(n):
+        c[i] = a[i] + b[i]
+
+d = np.empty(shape=n, dtype=np.float32)
+vector_add(a, b, d)
+np.testing.assert_array_equal(c, d)
+```
+
+## Define the Computation
+
+Now let's implement `vector_add` in TVM. The TVM implementation differs above in two ways:
+
+1. We don't need to write the complete function, but only to specify how each element of the output, i.e. `c[i]`, is computed
+1. TVM is symbolic, we create symbolic variable by specifying its shape, and define how the program will be computed
+
+In the following program, we first declare a variable `N` for the length of the input vectors by `tvm.var`. Then we create the placeholders `A` and `B` for both inputs by specifying their shapes, `(N,)`, through `tvm.placeholder`. Both `A` and `B` are `Tensor` objects, we can feed with data later. Next we define how the output `C` is computed by `tvm.compute`. It accepts two arguments, the output shape, and a function to compute each element by giving its index. Since the output is a vector, its element by be indexed by a single integer. There the lambda function accepts a single argument `i`. In addition, we assign proper names to each variable so we can print an easy-to-read program later.
+
+```{.python .input  n=17}
+import tvm
+
+N = tvm.var(name='n')
+A = tvm.placeholder((N,), name='a')
+B = tvm.placeholder((N,), name='b')
+C = tvm.compute(A.shape, lambda i: A[i] + B[i], name='c')
+
+type(A), A.shape, type(C), C.shape
+```
+
+We can see that `C` is again a `Tensor` object with shape equals to `A`. The operator, i.e. how `C` is computed, can be accessed by `C.op`. 
+
+## Create a Schedule
+
+To run the computation, we need to specify how to execute the program, for example, the order to access data and how to do multi-threading. Such an execution plan is called a schedule. A schedule often doesn't not change the results, but a good schedule fully utilizes the machine resources to achieve high performance. 
+
+Let's create a default schedule on the operator and print the pseudo codes.
+
+```{.python .input  n=16}
 s = tvm.create_schedule(C.op)
-fadd = tvm.build(s, [A, B, C])
+
+tvm.lower(s, [A, B, C], simple_mode=True)
 ```
 
-```{.python .input  n=65}
-type(fadd)
+As can be seen, the pseudo codes are C-like. TVM adds proper for-loops according to the output shape. 
+
+An efficient schedule is often closely related to the hardware we are using. We will explore various options in :numref:`ch_schedule` later. 
+
+## Compile and Run
+
+Once both computation and schedule are defined, we can compile them into an executable module with `tvm.build`. We can specify various targets such as GPU. Here we just use the default CPU target.
+
+```{.python .input}
+tvm_vector_add = tvm.build(s, [A, B, C])
 ```
 
-```{.python .input  n=61}
-tvm.nd.array(a).dtype
+The compiled module accepts three arguments, `A`, `B` and `C`. All of them need to be a `tvm.ndarray.NDArray` object. The easiest way is creating a NumPy ndarray and then convert into TVM ndarray by `tvm.nd.array`. We can convert it back to NumPy by the `asnumpy` method. 
+
+```{.python .input}
+x = np.ones(2)
+y = tvm.nd.array(x)
+type(y), y.asnumpy()
 ```
+
+We define a convenient function to evaluate a module by automatically converting NumPy ndarrays arguments into TVM ndarrays, and then return results in NumPy formats. This function is saved in the `d2ltvm` package so we can reuse it later. 
 
 ```{.python .input  n=82}
+# Save to the d2ltvm package.
 def eval_mod(mod, *args):
     tvm_args = [tvm.nd.array(arr) for arr in args]
     mod(*tvm_args)
     return [arr.asnumpy() for arr in tvm_args]
-
-_, _, e = eval_mod(fadd, a, b, c)
-e == c
 ```
+
+Now evaluate and check the results.
+
+```{.python .input}
+c = np.empty(shape=n, dtype=np.float32)
+_, _, e = eval_mod(tvm_vector_add, a, b, c)
+np.testing.assert_array_equal(e, d)
+```
+
+Remember that we specified both inputs should be a vector when declaring `A` and `B`. TVM will check if the input shapes satisfy this specification. 
 
 ```{.python .input  n=81}
 try: 
-    eval_mod(fadd, np.ones((1, 2)), np.ones((1, 2)), np.zeros((1, 2)))
+    a, b, c = np.ones((1, 2)), np.ones((1, 2)), np.zeros((1, 2))
+    eval_mod(tvm_vector_add, a, b, c)
 except tvm.TVMError as e:
     print(e)
 ```
 
-## Objects in TVM
+## Summary
 
-```{.python .input  n=85}
-type(A), type(C)
-```
+Implementing an operator using TVM has three steps:
 
-```{.python .input  n=86}
-type(C.op)
-```
-
-```{.python .input  n=87}
-type(s)
-```
-
-```{.python .input  n=88}
-type(fadd)
-```
+1. Declare the computation by specifying input and output shapes and how each output element is computed.
+2. Create a schedule to fully utilize the machine resources.
+3. Compile to the hardware target. 
