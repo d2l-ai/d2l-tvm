@@ -8,4 +8,5 @@ Run
 :numbered:
 
 chapter_expression/index
+chapter_schedule/index
 ```
