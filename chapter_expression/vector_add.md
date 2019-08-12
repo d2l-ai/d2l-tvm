@@ -1,6 +1,4 @@
-# Add Two Vector 
-
-
+# Add Two Vector
 
 ```{.python .input  n=9}
 import numpy as np
