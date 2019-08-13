@@ -1,5 +1,5 @@
-# Vector Addition 
-:ref:`ch_vector_add`
+# Vector Addition
+:label:`ch_vector_add`
 
 Let's begin with a simple example: summing two vectors. It's straightforward in NumPy.
 
@@ -12,7 +12,7 @@ b = np.random.normal(size=n).astype(np.float32)
 c = a + b
 ```
 
-Here we create two random vectors with length 100, and sum them element-wisely. Note that NumPy in default use 64-bit floating-points or 64-bit integers. We often use 32-bit floating point in deep learning, so we explicitly cast the data type. 
+Here we create two random vectors with length 100, and sum them element-wisely. Note that NumPy in default use 64-bit floating-points or 64-bit integers. We often use 32-bit floating point in deep learning, so we explicitly cast the data type.
 
 Despite that we can use the build-in `+` operator in NumPy, let's try to implement it by only use scalar operators. It will help understand the implementation with TVM. The following function uses a for-loop to iterate every element, and then sum two elements with the scalar `+` operator.
 
@@ -35,7 +35,7 @@ Now let's implement `vector_add` in TVM. The TVM implementation differs above in
 
 In the following program, we first declare the placeholders `A` and `B` for both inputs by specifying their shapes, `(n,)`, through `tvm.placeholder`. Both `A` and `B` are `Tensor` objects, we can feed with data later. We assign names to them so we can print an easy-to-read program later.
 
-Next we define how the output `C` is computed by `tvm.compute`. It accepts two arguments, the output shape, and a function to compute each element by giving its index. Since the output is a vector, its element by be indexed by a single integer. There the lambda function accepts a single argument `i`. The computation is similar to the `vector_add` function we defined before except that TVM will fill in the for loop later. 
+Next we define how the output `C` is computed by `tvm.compute`. It accepts two arguments, the output shape, and a function to compute each element by giving its index. Since the output is a vector, its element by be indexed by a single integer. There the lambda function accepts a single argument `i`. The computation is similar to the `vector_add` function we defined before except that TVM will fill in the for loop later.
 
 ```{.python .input  n=17}
 import tvm
@@ -47,11 +47,11 @@ C = tvm.compute(A.shape, lambda i: A[i] + B[i], name='c')
 type(C)
 ```
 
-We can see that `C` is again a `Tensor` object. The operator, i.e. how `C` is computed, can be accessed by `C.op`. 
+We can see that `C` is again a `Tensor` object. The operator, i.e. how `C` is computed, can be accessed by `C.op`.
 
 ## Create a Schedule
 
-To run the computation, we need to specify how to execute the program, for example, the order to access data and how to do multi-threading. Such an execution plan is called a schedule. A schedule often doesn't not change the results, but a good schedule fully utilizes the machine resources to achieve high performance. 
+To run the computation, we need to specify how to execute the program, for example, the order to access data and how to do multi-threading. Such an execution plan is called a schedule. A schedule often doesn't not change the results, but a good schedule fully utilizes the machine resources to achieve high performance.
 
 Let's create a default schedule on the operator and print the pseudo codes.
 
@@ -63,7 +63,7 @@ tvm.lower(s, [A, B, C], simple_mode=True)
 
 As can be seen, the pseudo codes are C-like. TVM adds proper for-loops according to the output shape. In overall, it quite similar to the preview function `vector_add`.
 
-An efficient schedule is often closely related to the hardware we are using. We will explore various options in :numref:`ch_schedule` later. 
+An efficient schedule is often closely related to the hardware we are using. We will explore various options in :numref:`ch_schedule` later.
 
 ## Compile and Run
 
@@ -99,9 +99,9 @@ _, _, e = eval_mod(tvm_vector_add, a, b, c)
 np.testing.assert_array_equal(e, d)
 ```
 
-## Argument Constraints 
+## Argument Constraints
 
-Remember that we specified both inputs should be 100-length vectors when declaring `A` and `B`. 
+Remember that we specified both inputs should be 100-length vectors when declaring `A` and `B`.
 
 ```{.python .input}
 A.shape, B.shape, C.shape
@@ -110,7 +110,7 @@ A.shape, B.shape, C.shape
 TVM will check if the input shapes satisfy this specification.
 
 ```{.python .input  n=81}
-try: 
+try:
     a, b, c = (np.ones(101, dtype='float32') for _ in range(3))
     eval_mod(tvm_vector_add, a, b, c)
 except tvm.TVMError as e:
@@ -126,7 +126,7 @@ A.dtype, B.dtype, C.dtype
 An error will appear if input with a different data type.
 
 ```{.python .input}
-try: 
+try:
     a, b, c = (np.ones(100, dtype='int32') for _ in range(3))
     eval_mod(tvm_vector_add, a, b, c)
 except tvm.TVMError as e:
