@@ -5,6 +5,10 @@
 import sys
 d2ltvm = sys.modules[__name__]
 
+# Defined in file: ./chapter_install/install.md
+import tvm
+import numpy as np
+
 # Defined in file: ./chapter_expression/vector_add.md
 def eval_mod(mod, *args):
     tvm_args = [tvm.nd.array(arr) for arr in args]
