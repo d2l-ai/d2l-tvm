@@ -14,5 +14,5 @@ def eval_mod(mod, *args):
     tvm_args = [tvm.nd.array(arr) for arr in args]
     mod(*tvm_args)
     for x, y in zip(args, tvm_args):
-        x[:] = y.asnumpy()
+        np.copyto(x, y.asnumpy())
 
