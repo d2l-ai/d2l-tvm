@@ -89,15 +89,16 @@ We define a convenient function to evaluate a module by automatically converting
 def eval_mod(mod, *args):
     tvm_args = [tvm.nd.array(arr) for arr in args]
     mod(*tvm_args)
-    return [arr.asnumpy() for arr in tvm_args]
+    for x, y in zip(args, tvm_args):
+        x[:] = y.asnumpy()
 ```
 
 Now evaluate and check the results.
 
 ```{.python .input}
 c = np.empty(shape=n, dtype=np.float32)
-_, _, e = eval_mod(tvm_vector_add, a, b, c)
-np.testing.assert_array_equal(e, d)
+eval_mod(tvm_vector_add, a, b, c)
+np.testing.assert_array_equal(c, d)
 ```
 
 ## Argument Constraints

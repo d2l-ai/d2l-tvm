@@ -34,7 +34,7 @@ We also save the test codes in :numref:`ch_vector_add` in the function `test_mod
 def test_mod(mod, dtype):    
     a, b = (np.random.normal(size=100).astype(dtype) for _ in range(2))
     c = np.empty(100, dtype=dtype)
-    _, _, c = d2l.eval_mod(mod, a, b, c)
+    d2l.eval_mod(mod, a, b, c)
     print('datatype of c', c.dtype)
     np.testing.assert_equal(c, a + b)
     

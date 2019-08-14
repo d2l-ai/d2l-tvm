@@ -15,7 +15,7 @@ n = tvm.var(name='n')
 type(n), n.dtype
 ```
 
-Now we can use `(n,)` to create a placeholder for an arbitrary length vector. 
+Now we can use `(n,)` to create a placeholder for an arbitrary length vector.
 
 ```{.python .input  n=3}
 A = tvm.placeholder((n,), name='a')
@@ -27,13 +27,13 @@ tvm.lower(s, [A, B, C], simple_mode=True)
 
 Compared to the generated pseudo codes in :numref:`ch_vector_add`, we can see the upper value of the for loop is changed from 100 to `n`. 
 
-Next we put the test codes in the `test_mod` function to verify the compiled module is able to correctly execute on input vectors with different lengths.  
+Next we put the test codes in the `test_mod` function to verify the compiled module is able to correctly execute on input vectors with different lengths.
 
 ```{.python .input  n=4}
 def test_mod(mod, size):
     a, b = (np.random.normal(size=size).astype('float32') for _ in range(2))
     c = np.empty(size, dtype='float32')
-    _, _, c = d2l.eval_mod(mod, a, b, c)
+    d2l.eval_mod(mod, a, b, c)
     print('c.shape:', c.shape)
     np.testing.assert_equal(c, a + b)
     
@@ -73,5 +73,4 @@ test_mod(mod, (2,3,4,5))
 ## Summary
 
 - We can use `tvm.var()` when we don't know the shape beforehand. 
-- The shape of a $n$-dimensional tensor is presented by a $n$-length list. 
-
+- The shape of a $n$-dimensional tensor is presented by a $n$-length list.
