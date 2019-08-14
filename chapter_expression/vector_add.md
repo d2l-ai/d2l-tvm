@@ -3,7 +3,7 @@
 
 Let's begin with a simple example: summing two vectors. It's straightforward in NumPy.
 
-```{.python .input  n=13}
+```{.python .input  n=2}
 import numpy as np
 
 n = 100
@@ -16,7 +16,7 @@ Here we create two random vectors with length 100, and sum them element-wisely. 
 
 Despite that we can use the build-in `+` operator in NumPy, let's try to implement it by only use scalar operators. It will help understand the implementation with TVM. The following function uses a for-loop to iterate every element, and then sum two elements with the scalar `+` operator.
 
-```{.python .input  n=14}
+```{.python .input  n=3}
 def vector_add(a, b, c):
     for i in range(n):
         c[i] = a[i] + b[i]
@@ -27,6 +27,7 @@ np.testing.assert_array_equal(c, d)
 ```
 
 ## Define the Computation
+:label:`def_com`
 
 Now let's implement `vector_add` in TVM. The TVM implementation differs above in two ways:
 
@@ -37,7 +38,7 @@ In the following program, we first declare the placeholders `A` and `B` for both
 
 Next we define how the output `C` is computed by `tvm.compute`. It accepts two arguments, the output shape, and a function to compute each element by giving its index. Since the output is a vector, its element by be indexed by a single integer. There the lambda function accepts a single argument `i`. The computation is similar to the `vector_add` function we defined before except that TVM will fill in the for loop later.
 
-```{.python .input  n=17}
+```{.python .input  n=6}
 import tvm
 
 A = tvm.placeholder((n,), name='a')
