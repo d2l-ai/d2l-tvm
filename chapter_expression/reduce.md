@@ -1,4 +1,4 @@
-# Reducing
+# Reduction Operations
 
 In this section, we will explore the reducing operators.
 
@@ -66,7 +66,7 @@ Let's also verify the results.
 ```{.python .input  n=17}
 mod = tvm.build(s, [A, B])
 c = np.empty((), dtype='float32')
-eval_mod(mod, a, c)
+d2l.eval_mod(mod, a, c)
 np.testing.assert_equal(a.sum(), c)
 ```
 
@@ -76,7 +76,7 @@ Beyond `tvm.sum`, there are other reduction operators such as `tvm.min` and `tvm
 
 An operator $\circ$ is commutative if $a\circ b = b\circ a$. TVM allows to define a customized commutative reduction operator through `tvm.comm_reducer`. It accepts two function arguments, one define how to compute $a\circ b$, the other one specifies the initial value. 
 
-Let's use the production by rows, e.g `a.prod(axis=1)`, as an example. Again, we first show how to implement it from scratch. 
+Let's use the production by rows, e.g `a.prod(axis=1)`, as an example. Again, we first show how to implement it from scratch.
 
 ```{.python .input  n=25}
 def prod_rows(a, b):
@@ -87,7 +87,7 @@ def prod_rows(a, b):
             b[i] = b[i] * a[i, j]
 ```
 
-As can be seen, we need to first initialize the return values to be 1, and then compute the reduction using scalar product `*`. Now define these two functions in TVM, the first one accepts a data type argument to return the initial value of an element in the return. The second one defines $a\circ b$ with two scalar inputs. Then we can create the reduction operator. 
+As can be seen, we need to first initialize the return values to be 1, and then compute the reduction using scalar product `*`. Now define these two functions in TVM, the first one accepts a data type argument to return the initial value of an element in the return. The second one defines $a\circ b$ with two scalar inputs. Then we can create the reduction operator.
 
 ```{.python .input}
 init = lambda dtype: tvm.const(1, dtype=dtype)
@@ -95,7 +95,7 @@ comp = lambda a, b: a * b
 product = tvm.comm_reducer(comp, init)
 ```
 
-The usage of `product` is similar to `tvm.sum`. 
+The usage of `product` is similar to `tvm.sum`.
 
 ```{.python .input  n=26}
 n = tvm.var('n')
@@ -114,7 +114,7 @@ Again, let's verify the results.
 ```{.python .input  n=28}
 mod = tvm.build(s, [A, B])
 b = np.empty((3,), dtype='float32')
-eval_mod(mod, a, b)
+d2l.eval_mod(mod, a, b)
 np.testing.assert_equal(a.prod(axis=1), b)
 ```
 
