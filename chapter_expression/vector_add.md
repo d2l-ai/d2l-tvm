@@ -87,10 +87,12 @@ We define a convenient function to evaluate a module by automatically converting
 ```{.python .input  n=82}
 # Save to the d2ltvm package.
 def eval_mod(mod, *args):
-    tvm_args = [tvm.nd.array(arr) for arr in args]
+    tvm_args = [
+        tvm.nd.array(x) if isinstance(x, np.ndarray) else x for x in args]
     mod(*tvm_args)
     for x, y in zip(args, tvm_args):
-        np.copyto(x, y.asnumpy())
+        if isinstance(x, np.ndarray):
+            np.copyto(x, y.asnumpy())
 ```
 
 Now evaluate and check the results.

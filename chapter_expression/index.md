@@ -6,6 +6,6 @@
 vector_add
 data_type
 shape
+index_shape_expression
 reduce
-access_element
 ```
