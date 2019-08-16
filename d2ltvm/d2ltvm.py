@@ -11,8 +11,10 @@ import numpy as np
 
 # Defined in file: ./chapter_expression/vector_add.md
 def eval_mod(mod, *args):
-    tvm_args = [tvm.nd.array(arr) for arr in args]
+    tvm_args = [
+        tvm.nd.array(x) if isinstance(x, np.ndarray) else x for x in args]
     mod(*tvm_args)
     for x, y in zip(args, tvm_args):
-        np.copyto(x, y.asnumpy())
+        if isinstance(x, np.ndarray):
+            np.copyto(x, y.asnumpy())
 
