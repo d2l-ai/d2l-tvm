@@ -7,4 +7,5 @@ vector_add
 data_type
 shape
 reduce
+access_element
 ```
