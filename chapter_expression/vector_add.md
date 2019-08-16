@@ -36,7 +36,7 @@ Now let's implement `vector_add` in TVM. The TVM implementation differs above in
 
 In the following program, we first declare the placeholders `A` and `B` for both inputs by specifying their shapes, `(n,)`, through `tvm.placeholder`. Both `A` and `B` are `Tensor` objects, we can feed with data later. We assign names to them so we can print an easy-to-read program later.
 
-Next we define how the output `C` is computed by `tvm.compute`. It accepts two arguments, the output shape, and a function to compute each element by giving its index. Since the output is a vector, its element by be indexed by a single integer. There the lambda function accepts a single argument `i`. The computation is similar to the `vector_add` function we defined before except that TVM will fill in the for loop later.
+Next we define how the output `C` is computed by `tvm.compute`. It accepts two arguments, the output shape, and a function to compute each element by giving its index. Since the output is a vector, its element by be indexed by a single integer. There the lambda function accepts a single argument `i`, and return `c[i]`, which is identical to `c[i] = a[i] + b[i]` defined in `vector_add`. One difference is that we didn't write the for-loop, which will be filled by TVM later.
 
 ```{.python .input  n=6}
 import tvm

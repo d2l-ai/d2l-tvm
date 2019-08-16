@@ -2,7 +2,7 @@
 
 In this section, we will explore the reducing operators.
 
-## Sum 
+## Sum
 
 Let's start with summing the rows. In NumPy, we can do it with the `sum` method.
 
@@ -28,20 +28,20 @@ sum_rows(a, b)
 b
 ```
 
-It's fairly straightforward, we first iterate on the first dimension, `axis=0`, and then sum all element on the second dimension to write the results. In NumPy, we can use `:` to slice all elements along that dimension. 
+It's fairly straightforward, we first iterate on the first dimension, `axis=0`, and then sum all element on the second dimension to write the results. In NumPy, we can use `:` to slice all elements along that dimension.
 
 Now let's implement the same function in TVM. Compared to the vector addition in :numref:`ch_vector_add`, we used two new functions here. One is `tvm.reduce_axis`, which create an axis for reduction with range from 0 to `m`. It's similar to the `:` used in `sum_rows`, but we need to explicitly specify the range in TVM. The other one is `tvm.sum`, which sum all elements along the reducing axis `k` and returns a scalar.
 
 ```{.python .input  n=30}
 n, m = tvm.var('n'), tvm.var('m')
-A = tvm.placeholder((n, m), name='A')
+A = tvm.placeholder((n, m), name='a')
 j = tvm.reduce_axis((0, m), name='j')
-B = tvm.compute((n,), lambda i: tvm.sum(A[i, j], axis=j), name='B')
+B = tvm.compute((n,), lambda i: tvm.sum(A[i, j], axis=j), name='b')
 s = tvm.create_schedule(B.op)
 tvm.lower(s, [A, B], simple_mode=True)
 ```
 
-We can see that the generated pseudo codes expand `tvm.sum` into another for loop along axis `k`. 
+We can see that the generated pseudo codes expand `tvm.sum` into another for loop along axis `k`. As mentioned before, the pseudo codes are C-like, so the index of `a[i,j]` is expanded to `(i*m)+j` with that `a` is a 1-D array.
 
 Now test the results are as expected.
 
@@ -56,7 +56,7 @@ We know that `a.sum()` will sum all elements in `a` and returns a scalar. Let's 
 
 ```{.python .input  n=31}
 i = tvm.reduce_axis((0, n), name='i')
-B = tvm.compute((), lambda: tvm.sum(A[i, j], axis=(i, j)), name='B')
+B = tvm.compute((), lambda: tvm.sum(A[i, j], axis=(i, j)), name='b')
 s = tvm.create_schedule(B.op)
 tvm.lower(s, [A, B], simple_mode=True)
 ```
@@ -70,18 +70,18 @@ d2l.eval_mod(mod, a, c)
 np.testing.assert_equal(a.sum(), c)
 ```
 
-Beyond `tvm.sum`, there are other reduction operators such as `tvm.min` and `tvm.max`. We can also implement customized reduction operators as well. 
+Beyond `tvm.sum`, there are other reduction operators such as `tvm.min` and `tvm.max`. We can also implement customized reduction operators as well.
 
 ## Commutative Reduction
 
-An operator $\circ$ is commutative if $a\circ b = b\circ a$. TVM allows to define a customized commutative reduction operator through `tvm.comm_reducer`. It accepts two function arguments, one define how to compute $a\circ b$, the other one specifies the initial value. 
+An operator $\circ$ is commutative if $a\circ b = b\circ a$. TVM allows to define a customized commutative reduction operator through `tvm.comm_reducer`. It accepts two function arguments, one define how to compute $a\circ b$, the other one specifies the initial value.
 
 Let's use the production by rows, e.g `a.prod(axis=1)`, as an example. Again, we first show how to implement it from scratch.
 
 ```{.python .input  n=25}
 def prod_rows(a, b):
     n, m = a.shape
-    for i in range(n):        
+    for i in range(n):
         b[i] = 1
         for j in range(m):
             b[i] = b[i] * a[i, j]
@@ -100,9 +100,9 @@ The usage of `product` is similar to `tvm.sum`.
 ```{.python .input  n=26}
 n = tvm.var('n')
 m = tvm.var('m')
-A = tvm.placeholder((n, m), name='A')
+A = tvm.placeholder((n, m), name='a')
 k = tvm.reduce_axis((0, m), name='k')
-B = tvm.compute((n,), lambda i: product(A[i, k], axis=k), name='B')
+B = tvm.compute((n,), lambda i: product(A[i, k], axis=k), name='b')
 s = tvm.create_schedule(B.op)
 tvm.lower(s, [A, B], simple_mode=True)
 ```
