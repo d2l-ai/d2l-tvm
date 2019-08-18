@@ -1,4 +1,4 @@
-# CPU Performance Optimization
+# Schedules to Optimize CPU Performance
 
 - memory locality
 - multi-threading

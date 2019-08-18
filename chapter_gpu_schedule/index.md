@@ -1,4 +1,4 @@
-# Scheduling
+# Schedules to Optimize GPU Performance
 :label:`ch_schedule`
 
 
@@ -6,5 +6,5 @@
 :maxdepth: 2
 :numbered:
 
-cpu/index
+vector_add
 ```
