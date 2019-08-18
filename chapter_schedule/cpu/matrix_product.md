@@ -9,7 +9,7 @@ import d2ltvm as d2l
 
 ```{.python .input}
 def benchmark(func, use_tvm=True):
-    avg_times, sizes = [], 2**np.arange(5, 13, 1)
+    avg_times, sizes = [], 2**np.arange(5, 12, 1)
     np.random.seed(0)
     for n in sizes:
         x = np.random.normal(size=(n, n)).astype(np.float32)
@@ -56,9 +56,6 @@ d2l.plot(sizes, [np_gflops, simple_gflops], xlabel='Matrix width/height',
 ```
 
 ## Reordering Axes
-
-
-
 
 ```{.python .input}
 s = tvm.create_schedule(C.op)
