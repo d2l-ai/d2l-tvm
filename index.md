@@ -15,5 +15,6 @@ section.
 
 chapter_install/install
 chapter_expression/index
-chapter_schedule/index
+chapter_cpu_schedule/index
+chapter_gpu_schedule/index
 ```
