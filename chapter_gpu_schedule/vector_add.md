@@ -10,7 +10,7 @@ import mxnet as mx
 
 ```{.python .input}
 def benchmark(func, use_tvm=True):
-    avg_times, sizes = [], (2**np.arange(10, 30, 3)
+    avg_times, sizes = [], 2**np.arange(10, 30, 3)
     np.random.seed(0)
     for size in sizes:
         x = np.random.normal(size=size).astype(np.float32)
