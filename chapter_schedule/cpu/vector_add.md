@@ -39,7 +39,8 @@ def plot(X, Y, xlabel=None, ylabel=None, legend=[], xlim=None,
     display.set_matplotlib_formats('svg')
     plt.rcParams['figure.figsize'] = figsize
     axes = plt.gca()
-    if len(X) != len(Y): X = [X] * len(Y)
+    X, Y = np.array(X), np.array(Y)
+    if X.shape != Y.shape: X = [X] * len(Y)
     if not fmts: fmts = ['-'] * len(X)
     for x, y, fmt in zip(X, Y, fmts):
         axes.plot(x, y, fmt)
@@ -53,7 +54,7 @@ def plot(X, Y, xlabel=None, ylabel=None, legend=[], xlim=None,
     axes.grid()
 ```
 
-We will use NumPy as the performance baseline. The output ndarray is passed through `out` to avoid unnecessary memory copy. 
+We will use NumPy as the performance baseline. The output ndarray is passed through `out` to avoid unnecessary memory copy.
 
 ```{.python .input}
 def np_add(x, y, z):
@@ -78,7 +79,7 @@ B = tvm.placeholder((n,), name='b')
 C = tvm.compute(A.shape, lambda i: A[i] + B[i], name='c')
 ```
 
-Then benchmark the default scheduling, which generate a single for-loop program. In default, TVM will generate LLVM codes and compile to machine code by LLVM. 
+Then benchmark the default scheduling, which generate a single for-loop program. In default, TVM will generate LLVM codes and compile to machine code by LLVM.
 
 ```{.python .input}
 s = tvm.create_schedule(C.op)
@@ -97,7 +98,7 @@ plot(sizes, [np_gflops, simple_gflops], xlabel='Vector length', xscale='log',
 
 ## Parallelization
 
-For such a simple program, e.g. sequentially read/write with a single for-loop, LLVM is able to generate highly efficient machine codes. One important optimization that is not enabled in default is parallelization. The vector addition operator is [embarrassingly parallel](https://en.wikipedia.org/wiki/Embarrassingly_parallel), we can just change the for-loop into a parallel for-loop. In TVM, we first obtain the scheduler for `C` by `s[C]`, and then require to parallel the computation of the first axis, which is `C.op.axis[0]`. 
+For such a simple program, e.g. sequentially read/write with a single for-loop, LLVM is able to generate highly efficient machine codes. One important optimization that is not enabled in default is parallelization. The vector addition operator is [embarrassingly parallel](https://en.wikipedia.org/wiki/Embarrassingly_parallel), we can just change the for-loop into a parallel for-loop. In TVM, we first obtain the scheduler for `C` by `s[C]`, and then require to parallel the computation of the first axis, which is `C.op.axis[0]`.
 
 ```{.python .input}
 s = tvm.create_schedule(C.op)
@@ -105,7 +106,7 @@ s[C].parallel(C.op.axis[0])
 print(tvm.lower(s, [A, B, C], simple_mode=True))
 ```
 
-We can see that `for` is changed to `parallel` in the pseudo codes. Comparing the results we obtained before, parallelization significantly improve the performance when the workloads are large, e.g. vector lengths beyond $10^4$. Though the parallelization overhead impact the performance for small workloads, where single thread is even faster. 
+We can see that `for` is changed to `parallel` in the pseudo codes. Comparing the results we obtained before, parallelization significantly improve the performance when the workloads are large, e.g. vector lengths beyond $10^4$. Though the parallelization overhead impact the performance for small workloads, where single thread is even faster.
 
 ```{.python .input}
 mod = tvm.build(s, [A, B, C])
@@ -119,4 +120,4 @@ plot(sizes, [np_gflops, simple_gflops, parallel_gflops],
 ## Summary
 
 - The default scheduling generates highly efficient single-thread CPU program.
-- Parallelization improves performance for large workloads. 
+- Parallelization improves performance for large workloads.

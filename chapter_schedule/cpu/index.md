@@ -9,4 +9,5 @@
 :numbered:
 
 vector_add
+matrix_product
 ```
