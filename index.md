@@ -9,11 +9,18 @@ NumPy before. We are not aiming to replace the tutorials available at tvm.ai,
 but for more easy-to-read tutorials with a consistent theme among each
 section.
 
+
+
+```toc
+:maxdepth: 1
+
+chapter_install/install
+```
+
 ```toc
 :maxdepth: 2
 :numbered:
 
-chapter_install/install
 chapter_expression/index
 chapter_cpu_schedule/index
 chapter_gpu_schedule/index
