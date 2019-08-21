@@ -72,7 +72,7 @@ jupyter notebook
 At this point open http://localhost:8888 (which usually opens automatically) in the browser, then you can view and run the code in each section of the book.
 
 
-### Code
+## Code
 :label:`ch_code`
 
 We save reusable code blocks in the `d2ltvm` package by adding the comment `# Save to the
