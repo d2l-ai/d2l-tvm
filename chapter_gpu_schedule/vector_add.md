@@ -1,6 +1,6 @@
 # Vector Addition
 
-We have already seen in :numref:`ch_vector_add_cpu` for how to optimize the CPU performance of vector addition with multi-threading. Now let's further accelerate it using GPUs. We are using `nvidia-sim` to verify we have at least one Nvidia GPU available. Note that this section executes on AMD GPUs as well.
+We have already seen in :numref:`ch_vector_add_cpu` for how to optimize the CPU performance of vector addition with multi-threading. Now let's further accelerate it using GPUs. We are using `nvidia-smi` to verify we have at least one Nvidia GPU available. Note that this section executes on AMD GPUs as well.
 
 ```{.python .input  n=1}
 %matplotlib inline
