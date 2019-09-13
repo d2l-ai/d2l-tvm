@@ -1,6 +1,6 @@
 # Vector Addition
 
-We have already seen in :numref:`ch_vector_add_cpu` for how to optimize the CPU performance of vector addition with multi-threading. Now let's further accelerate it using GPUs. We are using `nvidia-sim` to verify we have at least one Nvidia GPU available. Note that this section executes on AMD GPUs as well.
+We have already seen in :numref:`ch_vector_add_cpu` for how to optimize the CPU performance of vector addition with multi-threading. Now let's further accelerate it using GPUs. We are using `nvidia-smi` to verify we have at least one Nvidia GPU available. Note that this section executes on AMD GPUs as well.
 
 ```{.python .input  n=1}
 %matplotlib inline
@@ -49,7 +49,7 @@ _, cpu_gflops = benchmark(mod, use_tvm=True, ctx=tvm.cpu())
 
 ## Parallelization on GPU
 
-GPU's thread abstraction is slightly more complex than CPU's. In GPU, threads are grouped into blocks. A thread block can execute all its threads serially or in parallel on a stream processor. The maximal number of threads in a block is 512 before CUDA 10, and 1024 after. GPU allows to use multiple thread blocks, which can be indexed by 1-D, 2-D or 3-D. Let consider the 1-D case here. In 1-D indexing, the `i`-th block is indexed by `blockIdx.x`. The number of threads in each block is `blockDim.x` and the `i`-th thread within a block is indexed by `threadIdx.x`. Therefore, the overall index of a thread can be calculated by 
+GPU's thread abstraction is slightly more complex than CPU's. In GPU, threads are grouped into blocks. A thread block can execute all its threads serially or in parallel on a stream processor. The maximal number of threads in a block is 512 before CUDA 10, and 1024 after. GPU allows to use multiple thread blocks, which can be indexed by 1-D, 2-D or 3-D. Let consider the 1-D case here. In 1-D indexing, the `i`-th block is indexed by `blockIdx.x`. The number of threads in each block is `blockDim.x` and the `i`-th thread within a block is indexed by `threadIdx.x`. Therefore, the overall index of a thread can be calculated by
 
 $$i = \text{blockIdx.x} \times \text{blockDim.x} + \text{threadIdx.x}.$$
 
@@ -72,33 +72,33 @@ dev_mod = mod.imported_modules[0]
 print(dev_mod.get_source())
 ```
 
-The context for the $i$-th CUDA GPU can be presented by either `tvm.context('cuda', i)` or simply `tvm.gpu(i)`. Let's benchmark the performance on the first GPU. 
+The context for the $i$-th CUDA GPU can be presented by either `tvm.context('cuda', i)` or simply `tvm.gpu(i)`. Let's benchmark the performance on the first GPU.
 
 ```{.python .input}
 _, cuda_gflops = benchmark(mod, use_tvm=True, ctx=tvm.gpu(0))
 ```
 
-Comparing the CPU and GPU performance, we can see that for small workloads, e.g. length smaller than $10^5$, the performance of CPU and GPU are similar. But CPU GFLOPS is around $8$ for large vectors, while GPU GFLOPS increases to $90$. Also note this number is way below the theoretic $14899$ GFLOPS of Tesla V100 on 32-bit floating points. It is because the vector addition is memory intensive, which is hard to fully utilize the GPU computing resources. 
+Comparing the CPU and GPU performance, we can see that for small workloads, e.g. length smaller than $10^5$, the performance of CPU and GPU are similar. But CPU GFLOPS is around $8$ for large vectors, while GPU GFLOPS increases to $90$. Also note this number is way below the theoretic $14899$ GFLOPS of Tesla V100 on 32-bit floating points. It is because the vector addition is memory intensive, which is hard to fully utilize the GPU computing resources.
 
 ```{.python .input}
-d2l.plot(sizes, [cpu_gflops, cuda_gflops], xlabel='Vector length', xscale='log', 
+d2l.plot(sizes, [cpu_gflops, cuda_gflops], xlabel='Vector length', xscale='log',
      ylabel='GFLOPS', yscale='log', legend = ['CPU', 'CUDA'])
 ```
 
-Let's also compare MXNet performance on the same GPU. 
+Let's also compare MXNet performance on the same GPU.
 
 ```{.python .input}
 def mx_add(x, y, z):
     mx.nd.elemwise_add(x, y, out=z)
     z.wait_to_read()
-    
+
 _, mx_gflops = benchmark(mx_add, use_tvm=False, ctx=mx.gpu(0))
 
-d2l.plot(sizes, [cuda_gflops, mx_gflops], xlabel='Vector length', xscale='log', 
+d2l.plot(sizes, [cuda_gflops, mx_gflops], xlabel='Vector length', xscale='log',
          ylabel='GFLOPS', yscale='log', legend = ['TVM CUDA', 'MXNet'])
 ```
 
-We can see that TVM is faster for small workloads. That is because TVM uses `cython` for the foreign function interface, which is significantly faster than the `ctypes` used by MXNet. It's interesting to see that the simple schedule we had performs worse compared to MXNet for large vectors. It could due to the number of threads in each thread-block, which is 64, is too small to use all cores in a stream processor. Let's increase it to $256$. 
+We can see that TVM is faster for small workloads. That is because TVM uses `cython` for the foreign function interface, which is significantly faster than the `ctypes` used by MXNet. It's interesting to see that the simple schedule we had performs worse compared to MXNet for large vectors. It could due to the number of threads in each thread-block, which is 64, is too small to use all cores in a stream processor. Let's increase it to $256$.
 
 ```{.python .input}
 s = tvm.create_schedule(C.op)
@@ -110,12 +110,12 @@ _, cuda_gflops_2 = benchmark(mod, use_tvm=True, ctx=tvm.gpu(0))
 ```
 
 ```{.python .input}
-d2l.plot(sizes, [cuda_gflops, mx_gflops, cuda_gflops_2], 
-         xlabel='Vector length', xscale='log', ylabel='GFLOPS', yscale='log', 
+d2l.plot(sizes, [cuda_gflops, mx_gflops, cuda_gflops_2],
+         xlabel='Vector length', xscale='log', ylabel='GFLOPS', yscale='log',
          legend = ['CUDA, 64', 'MXNet', 'CUDA 256'], fmts=['--', '--', '-'])
 ```
 
-Now we can see performances are matched. 
+Now we can see performances are matched.
 
 ## Use OpenCL
 
@@ -130,8 +130,8 @@ mod = tvm.build(s, [A, B, C], 'opencl')
 
 _, opencl_gflops = benchmark(mod, use_tvm=True, ctx=tvm.context('opencl', 0))
 
-d2l.plot(sizes, [cuda_gflops_2, opencl_gflops], xlabel='Vector length', 
-         xscale='log',  ylabel='GFLOPS', yscale='log', 
+d2l.plot(sizes, [cuda_gflops_2, opencl_gflops], xlabel='Vector length',
+         xscale='log',  ylabel='GFLOPS', yscale='log',
          legend=['CUDA', 'OpenCL'])
 ```
 
