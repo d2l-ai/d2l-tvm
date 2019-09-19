@@ -42,12 +42,13 @@ stage("Build and Publish") {
 
       sh label:"Build Package", script:"""set -ex
       conda activate ${ENV_NAME}
+      d2lbook build pkg
       """
 
       if (env.BRANCH_NAME == 'master') {
         sh label:"Publish", script:"""set -ex
         conda activate ${ENV_NAME}
-        d2lbook deploy html pdf # pkg
+        d2lbook deploy html pdf pkg
       """
       }
 	}
