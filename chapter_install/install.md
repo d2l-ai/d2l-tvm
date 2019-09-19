@@ -7,13 +7,13 @@ To get you up and running with hands-on experiences, we'll need you to set up wi
 ## Obtaining Source Codes
 
 The source code package containing all notebooks is available at
-http://tvm.d2l.ai.s3-website-us-west-2.amazonaws.com/d2l-tvm.zip.
+http://tvm.d2l.ai/d2l-tvm.zip.
 Please download it and extract it into a
 folder. For example, on Linux/macos, if you have both `wget` and `unzip`
 installed, you can do it through:
 
 ```
-wget http://tvm.d2l.ai.s3-website-us-west-2.amazonaws.com/d2l-tvm.zip
+wget http://tvm.d2l.ai/d2l-tvm.zip
 unzip d2l-tvm.zip -d d2l-tvm
 ```
 
