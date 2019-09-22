@@ -20,19 +20,13 @@ workloads. One is writing highly efficient operators, such as matrix product, on
 
 To write an operator, we first define its computation expression. Like CUDA, we assume the workload can be executed in a data parallelism style. Here we only need to define how each element in the output is computed based on the inputs. We will present how to define the computation using the DSL (domain specific language) provided in by TVM.
 
-```toc
-:maxdepth: 2
-:numbered:
-
-chapter_expression/index
-
-```
-
 Next, we need to define how an expression is executed. If the output is a 10-by-10 matrix, then we need to run the expression 100 times. Naively running them sequentially will leads to poor performance. We need to fully utilize the machine resources for better performance, including SIMD (Single instruction, multiple data), multi-cores, and memory cache. We will demonstrate typical scheduling optimizations on multiple hardware.
 
 ```toc
 :maxdepth: 2
 :numbered:
+
+chapter_expression/index
 
 chapter_cpu_schedule/index
 chapter_gpu_schedule/index
