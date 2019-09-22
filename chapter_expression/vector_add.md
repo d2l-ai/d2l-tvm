@@ -68,7 +68,7 @@ An efficient schedule is often closely related to the hardware we are using. We 
 
 ## Compile and Run
 
-Once both computation and schedule are defined, we can compile them into an executable module with `tvm.build`. We can specify various targets such as GPU. Here we just use the default CPU target.
+Once both computation and schedule are defined, we can compile them into an executable module with `tvm.build`. We must specify two arguments, the schedule, and all and  We can specify various targets such as GPU. Here we just use the default CPU target.
 
 ```{.python .input}
 tvm_vector_add = tvm.build(s, [A, B, C])
