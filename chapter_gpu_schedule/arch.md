@@ -1,6 +1,7 @@
 # GPU Architecture
 :label:`ch_gpu_arch`
 
+
 High-end GPUs often provide a significantly better performance over high-end CPUs. Despite the terminologies and programming paradigms are different between GPUs and CPUs. Their architectures are similar to each other, but GPU has a wider SIMD width and more cores. In this chapter, we will brief review the GPU architecture based on the CPU architecture presented in :numref:`ch_cpu_arch`.
 
 The system we are using has 4 [Tesla V100](https://images.nvidia.com/content/volta-architecture/pdf/volta-architecture-whitepaper.pdf) GPUs, therefore we will illustrate the architecture based on V100.

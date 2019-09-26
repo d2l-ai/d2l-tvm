@@ -1,6 +1,7 @@
 # CPU Architecture
 :label:`ch_cpu_arch`
 
+
 In this section, we will do a brief introduction of CPU components that are important for the performance of scientific computing. For a more comprehensive survey, we recommend [this classic textbook](https://www.amazon.com/Computer-Architecture-Quantitative-John-Hennessy/dp/012383872X).
 
 ## Arithmetic Units
