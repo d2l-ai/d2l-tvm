@@ -1,12 +1,18 @@
 # CPU Architecture
 
-In this section, we will do a very brief introduction of CPU components that are important for the performance of scientific computing workloads. For a more comprehensive survey, we recommend [this classic textbook](https://www.amazon.com/Computer-Architecture-Quantitative-John-Hennessy/dp/012383872X).
+In this section, we will do a brief introduction of CPU components that are important for the performance of scientific computing. For a more comprehensive survey, we recommend [this classic textbook](https://www.amazon.com/Computer-Architecture-Quantitative-John-Hennessy/dp/012383872X).
 
-## Floating-point Computations
+## Arithmetic Units
 
-In deep learning, we are mostly interested in floating-point computations. CPU often have specialized floating point units (FPU) to do the computation. Depends on hardware, the speeds of various floating-point types may vary. Let's check the performance of a matrix product under different floating-points.
+CPU have hardware units to perform arithmetics on integers (called [ALU](https://en.wikipedia.org/wiki/Arithmetic_logic_unit)) and floating-points (called [FPU](https://en.wikipedia.org/wiki/Floating-point_arithmetic)). The performance of various data types depends on the hardware. Let's first check the CPU model we are using.
 
-```{.python .input  n=12}
+```{.python .input  n=13}
+!cat /proc/cpuinfo | grep "model name" | head -n1
+```
+
+Now check the performance of a matrix product under different data types.
+
+```{.python .input  n=6}
 import numpy as np
 
 def benchmark(dtype):
@@ -15,65 +21,111 @@ def benchmark(dtype):
 
 benchmark('float32')
 benchmark('float64')
+benchmark('int32')
+benchmark('int64')
 ```
 
-As can be seen, 32-bit floating-point is 2x faster than 64-bit floating-point. You may try other data types such as 32-bit integer and 16-bit floating point. You may find they are slower, which might due to both NumPy is not well optimized or the CPU we are using doesn't provide efficient calculation of these data types. 
+As can be seen, 32-bit floating-point (float32) is 2x faster than 64-bit floating-point (float64). The integer performance is way more slower. We will get back to the understand more about these numbers later. 
 
-The matrix product mainly uses the multiply-accumulate operation, i.e. `res += a * b`. Since it is so commonly used in scientific computing, CPU often has specialized unit, called [multiplier–accumulator or MAC](https://en.wikipedia.org/wiki/Multiply–accumulate_operation), to provide efficient support with good numerical accuracy. 
+Other operators, however, could be significantly slower than the multiplication and addition `a += b * c` used in matrix product. For example, CPU may need hundreds of circles to computing `exp`. You can see that even 1000 times less operators is needed for `np.exp(x)` than `np.dot(x, x)`. The former takes longer time.
 
-Other operators, however, could be significantly slower than multiply-accumulation. For example, CPU may need hundreds of circles to computing `exp`. You can see that even 1000 times less operators is needed for `np.exp(x)` than `np.dot(x, x)`. The former takes longer time. 
-
-```{.python .input}
+```{.python .input  n=14}
 x = np.random.normal(size=(1000, 1000)).astype('float32')
 %timeit np.exp(x)
 ```
 
-## Memory Subsystem
+## Parallel Execution
 
-The memory subsystem consists of main memory, caches and registers. Let's check the size of each components. 
+The CPU frequency increased rapidly until the beginning of the 21st century. On 2003, Intel released a [Pentium 4](https://en.wikipedia.org/wiki/Pentium_4) CPU with a 3.0 GHz clock rate. Check our CPU clock rate,
 
 ```{.python .input}
-!lscpu | grep cache
+!lscpu | grep MHz
 ```
 
-As can be seen, there are three level caches, L1, L2 and L3. The L1 cache has 32KB for instructions and 32KB for data. The L2 cache 4x larger, while the L3 cache is way more larger. The L1 cache has the smallest access latency, which is roughly 1 ns. The L2 cache access latency is around 3 ns, it's slower because its hardware characteristics (e.g. larger in size) and it's farther away from the computation units than the L1 cache. The L3 cache is bigger and slower (around 20 ns access latency). 
+we can see that it also has a max 3 GHz clock rate, but it might be 100x faster than the Pentium 4 CPU. One secure source is that new models do much better on parallel execution. Next we briefly discuss two typical parallelizations.
 
-The main memory, on the other hands, is significantly bigger. 
+![Single core vs single core with SIMD vs multi-core with SIMD.](../img/cpu_parallel_arch.svg)
+:label:`fig_cpu_parallel_arch`
+
+### SIMD
+
+Single instruction, multiple data ([SIMD](https://en.wikipedia.org/wiki/SIMD)), refers to process multiple elements with a single instruction simultaneously. :numref:`fig_cpu_parallel_arch` illustrates this architecture. In a normal CPU core, there is an instruction fetching and decoding unit. It runs an instruction on the arithmetic unit (AU), e.g. ALU or FPU, to process one element, e.g. float32, each time. With SIMD, we have multiple AUs instead of one. In each time, the fetch-and-decode unit runs an instruction on every AU simultaneously. If there are $n$ AUs, then we can process $n$ element each time. 
+
+Popular SIMD instruction sets include Intel's [SSE](https://en.wikipedia.org/wiki/Streaming_SIMD_Extensions) and [AVX](https://en.wikipedia.org/wiki/Advanced_Vector_Extensions), ARM's [Neon](https://en.wikipedia.org/wiki/ARM_architecture#Advanced_SIMD_(NEON)) and AMD's [3DNow!](https://en.wikipedia.org/wiki/3DNow!). Let's check which sets our CPU supports.
+
+
+```{.python .input}
+!cat /proc/cpuinfo | grep "flags" | head -n1
+```
+
+As can be seen, the most powerful SIMD instruction set supported is AVX2, which extends AVX to 256-bit, e.g. it is able to perform 8 float32 operations or 4 float64 operators per time. 
+
+### Multi-cores
+
+SIMD improves the performance of a single core, another way is adding multiple cores on a single CPU socket. numref:`fig_cpu_parallel_arch` shows two CPUs cores, each core has 2 AUs. The CPU we are using has 32 cores. 
+
+```{.python .input}
+!cat /proc/cpuinfo | grep "model name" | wc -l 
+```
+
+But note that Intel's [hyper-threading](https://en.wikipedia.org/wiki/Hyper-threading) runs 2 hardware threads per core. These two threads share the AUs and caches on the same core, which is useful to hide latency but may not improve the throughput, which matters to scientific computing most. By hyper-threading, each core is presented as 2 logic cores to the operation system. So even the system shows there are 32 cores, physically our CPU only has 16 cores. 
+
+### Performance 
+
+We often use floating point operations per second ([FLOP](https://en.wikipedia.org/wiki/FLOPS)) to measure the peak hardware performance. In general, we can compute this number by
+
+$$\text{clock_rate} \times \text{#physical_cores} \times \text{#instructions_per_clock} \times \text{#operators_per_instruction}.$$
+
+For the CPU we are using, the max clock rate is $3\times 10^9$, it has 16 physical cores, the AVX2 computes 8 float32 instructions per second, the [FMA](https://en.wikipedia.org/wiki/FMA_instruction_set) instruction set in AVX2 compute `a += b * c` each time, which contains 2 operations. Therefore, the GFLOPS (gigaFLOPS) for single precision (float32) is 
+
+```{.python .input}
+3 * 16 * 8 * 2 
+```
+
+You can modify the above code based on your system information to calculate your CPU peak performance.  
+
+Matrix product is a good benchmark workload for the peak performance. As can be seen, the measure GFLOPS is very close to the peak performance. 
+
+```{.python .input}
+x = np.random.normal(size=(1000, 1000)).astype('float32')
+res = %timeit -o -q np.dot(x, x)
+2 * 1000**3 / res.average / 1e9
+```
+
+## Memory Subsystem
+
+Another component significantly impacts the performance is the memory subsystem. The memory size is one of the key specification of a system. The machine we are using has 240 GB memory. 
 
 ```{.python .input}
 !cat /proc/meminfo | grep MemTotal
 ```
 
-Its size is 240 GB in our system, 5 thousands bigger than the L3 cache. As expected, it has a larger latency, around 10 ns, and also a smaller bandwidth. Main memory is quite different than caches. Main memory is often built on [dynamic random-access memory, or DRAM](https://en.wikipedia.org/wiki/Dynamic_random-access_memory) and plugged in on the motherboard, and connected to CPUs through memory controller.  While caches are often [static random-access memory, or SRAM](https://en.wikipedia.org/wiki/Static_random-access_memory), they are more expensive and are placed on the CPU chip. A brief layout is illustrated in :numref:`fig_cache-mem-layout`.
-
-![The layout of main memory and caches.](../img/cache-mem-layout.svg)
-:label:`fig_cache-mem-layout`
-
-To compute with data in main memory, we first need to copy it to the L3 cache, then the L2 cache, the L1 cache and registers, as shown in :numref:`fig_access-cache`. We can accelerate this process if we will use the same data shortly. For example, if it is still on registers, we don't need to do any movement. Otherwise, we will check if it is still on the L1 cache, whose chance is higher since the L1 cache can hold more data than the registers. Similarly for the L2 cache and the L3 cache. 
-
-![Move data to registers to use.](../img/access-cache.svg)
-:label:`fig_access-cache`
-
-This data access pattern leads to one of the most code optimization principle: [locality of reference](https://en.wikipedia.org/wiki/Locality_of_reference). There are two types of localities matter to us: temporal locality and spatial locality. In temporal locality, we want to reuse data in the near future so that they may still on cache. In spatial locality, we want to access data in a continuous way because the system often read a batch of data (e.g. several FP32 numbers) each time, and it can pre-fetch other near by data into cache before seeing they are used by the program.  
-
-## Multi-core
-
-Modern CPUs have multi-cores. The machine we are using have a single [Intel Xeon E5-2688 v4](https://en.wikichip.org/wiki/intel/xeon_e5/e5-2686_v4) CPU, or called socket. It has 16 physical cores enabled. Due to [hyper-threading](https://en.wikipedia.org/wiki/Hyper-threading), it appears to have 32 processors. But hyper-threading helps scientific computing little, we should consider we only have 16 cores.
+The memory bandwidth, on the other hand, is less well-known. We can use the [mbw](http://manpages.ubuntu.com/manpages/xenial/man1/mbw.1.html) tool to test the bandwidth. In average, we can copy 4.6 GB data by `memcpy` per second.
 
 ```{.python .input}
-!nproc
+!mbw 256 | grep AVG | grep MEMCPY
 ```
 
-Each core has its own registers, computation units (ALU, FPU, ...), and L1/L2 caches. The L3 caches are shared among all cores. This architecture is illustrated in :numref:`fig_multi-cores`. 
+Note that our CPU can process $759\times 10^9$ float32 numbers per second, it requires the bandwidth should be $759\times 4=3036$ MB/s. CPU use caches to fill in this big bandwidth gap. Let's check the caches our CPU has. 
+
+```{.python .input}
+!lscpu | grep cache
+```
+
+As can be seen, there are three levels of caches: L1, L2 and L3. The L1 cache has 32KB for instructions and 32KB for data. The L2 cache is 4x larger. The L3 cache is way more larger, but it is still thousands times smaller than the main memory. The benefits of caches are significantly improved access latency and bandwidth. Typically, 
+the L1 cache has a 1 ns latency, the L2 cache's latency is around 3 ns, and the L3 cache is slower, with a latency about 20 ns, while still faster than the main memory's 100 ns latency.
 
 
-![A multi-core CPU.](../img/multi-cores.svg)
-:label:`fig_multi-cores`
+![The layout of main memory and caches.](../img/cpu_memory.svg)
+:label:`fig_cpu_memory`
 
-When a program is [embarrassingly parallel](https://en.wikipedia.org/wiki/Embarrassingly_parallel), we can execute a thread on each cores, and 16 cores often leads to a 16x speedup compared to a single thread implementation. If there are synchronizations among threads, each different threads need to write to a same location, then it leads to synchronization overhead that decreases the performance. 
+A brief memory subsystem layout is illustrated in :numref:`fig_cpu_memory`.
+To compute with data on main memory, we first need to copy it to the L3 cache, then the L2 cache, the L1 cache and the registers. We can accelerate this process if we will use the same data shortly. For example, if it is still on registers, we don't need to do any movement. Otherwise, we will check if it is still on the L1 cache, whose chance is higher since the L1 cache can hold more data than the registers. Similarly for the L2 cache and the L3 cache. 
+
+This data access pattern leads to one of the most code optimization principle: [locality of reference](https://en.wikipedia.org/wiki/Locality_of_reference). There are two types of localities matter to us: temporal locality and spatial locality. In temporal locality, we want to reuse data in the near future so that they may still on cache. In spatial locality, we want to access data in a continuous way because the system often read a batch of data (e.g. several float32 numbers) each time, and it can pre-fetch other near by data into cache before seeing they are used by the program.
 
 ## Summary
 
-- CPU have dedicated units to handle computations on various data types.
-- The memory subsystem design means that programs with good temporal and spatial locality are more efficient.
-- An efficient program should effectively use all available cores. 
+- CPUs have dedicated units to handle computations on various data types. Its peak performance is determined by the clock rate, the number of cores, the SIMD width and instruction sets. 
+- CPUs use multi-level caches to bridge the gap between CPU computational power and main memory bandwidth. 
+- An efficient program should be effectively parallelized and access data with good temporal and spatial localities.
