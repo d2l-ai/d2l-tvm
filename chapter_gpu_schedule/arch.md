@@ -25,14 +25,16 @@ TBD.
 |------|------|------|
 | Clock rate | 3 GHz | 1.53 GHz | 
 | # cores | 16 | 80 |
-| FP32 AU per core | 8 | 64 |
-| FP16 AU per core | - | 512 |
+| # FP64 AUs per core | 4 | 32 |
+| # FP32 AUs per core | 8 | 64 |
+| # FP16 AUs per core | ? | 8 |
 | cache per core | 320KB | 128KB |
 | shared cache | 45MB | 6MB |
 | Memory | 240GB | 16GB |
 | Max memory bandwidth | 72 GB/sec | 900 GB/sec |
+| FP64 TFLOPS | 0.38 | 7.8 |
 | FP32 TFLOPS | 0.77 | 15.7 | 
-| FP16 TFLOPS | - | 125.3 |
+| FP16 TFLOPS | ? | 125.3 |
 :label:`tab_cpu_gpu_compare`
 
 :numref:`tab_cpu_gpu_compare` compare CPU and GPU.

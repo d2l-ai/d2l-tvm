@@ -6,5 +6,6 @@
 :maxdepth: 2
 :numbered:
 
+arch
 vector_add
 ```
