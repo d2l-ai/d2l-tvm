@@ -32,13 +32,7 @@ stage("Build and Publish") {
 
       sh label:"Build HTML", script:"""set -ex
       conda activate ${ENV_NAME}
-      d2lbook build html
-      for fn in `find _build/html/_images/ -iname '*.svg' `; do
-         # rsvg-convert installed on ubuntu changes unit from px to pt, so evening no
-         # change of the size makes the svg larger...
-         rsvg-convert -z 1 -f svg -o tmp.svg $fn
-         mv tmp.svg $fn
-      done
+      ./build_html.sh
       """
 
       sh label:"Build PDF", script:"""set -ex
