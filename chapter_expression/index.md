@@ -11,7 +11,7 @@ for i in range(len(c)):
 
 While in TVM, we only need to specify how `c[i]` is computed. This expression will be then applied to all possible `i`s automatically. Besides the benefit of a more concise program, it allows more flexible ways to schedule the computing for better performance later on.
 
-```.toc
+```toc
 :maxdepth: 2
 
 vector_add
