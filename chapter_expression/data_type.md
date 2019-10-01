@@ -31,13 +31,13 @@ mod = tvm_vector_add('int32')
 We also save the test codes in :numref:`ch_vector_add` in the function `test_mod` and verity the results.
 
 ```{.python .input}
-def test_mod(mod, dtype):    
+def test_mod(mod, dtype):
     a, b = (np.random.normal(size=100).astype(dtype) for _ in range(2))
     c = np.empty(100, dtype=dtype)
-    d2l.eval_mod(mod, a, b, c)
+    d2l.eval_mod(mod, a, b, out=c)
     print('datatype of c', c.dtype)
     np.testing.assert_equal(c, a + b)
-    
+
 test_mod(mod, 'int32')
 ```
 

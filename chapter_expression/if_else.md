@@ -23,6 +23,6 @@ mod = tvm.build(s, [A, B])
 
 ```{.python .input  n=20}
 b = np.empty_like(a)
-d2l.eval_mod(mod, a, b)
+d2l.eval_mod(mod, a, out=b)
 b
 ```

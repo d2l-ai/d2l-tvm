@@ -48,5 +48,4 @@ We compare the specification difference between the CPU and GPU used by this boo
 | FP16 TFLOPS | ? | **125.3** |
 :label:`tab_cpu_gpu_compare`
 
-## Summary 
-
+## Summary

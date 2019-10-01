@@ -86,20 +86,24 @@ We define a convenient function to evaluate a module by automatically converting
 
 ```{.python .input  n=82}
 # Save to the d2ltvm package.
-def eval_mod(mod, *args):
-    tvm_args = [
-        tvm.nd.array(x) if isinstance(x, np.ndarray) else x for x in args]
+def eval_mod(mod, *inputs, out):
+    """Evaluate a TVM module, and save results in out.
+    """
+    # Convert all numpy arrays to tvm arrays
+    tvm_args = [tvm.nd.array(x) if isinstance(x, np.ndarray) 
+                else x for x in inputs + (out,)]
     mod(*tvm_args)
-    for x, y in zip(args, tvm_args):
-        if isinstance(x, np.ndarray):
-            np.copyto(x, y.asnumpy())
+    # If out is a tvm array, then its value has already been inplaced. 
+    # Otherwise, explicitly copy the results. 
+    if isinstance(out, np.ndarray):
+        np.copyto(out, tvm_args[-1].asnumpy())
 ```
 
 Now evaluate and check the results.
 
 ```{.python .input}
 c = np.empty(shape=n, dtype=np.float32)
-eval_mod(tvm_vector_add, a, b, c)
+eval_mod(tvm_vector_add, a, b, out=c)
 np.testing.assert_array_equal(c, d)
 ```
 
@@ -116,7 +120,7 @@ TVM will check if the input shapes satisfy this specification.
 ```{.python .input  n=81}
 try:
     a, b, c = (np.ones(101, dtype='float32') for _ in range(3))
-    eval_mod(tvm_vector_add, a, b, c)
+    c, = eval_mod(tvm_vector_add, a, b, out=c)
 except tvm.TVMError as e:
     print(e)
 ```
@@ -132,7 +136,7 @@ An error will appear if input with a different data type.
 ```{.python .input}
 try:
     a, b, c = (np.ones(100, dtype='int32') for _ in range(3))
-    eval_mod(tvm_vector_add, a, b, c)
+    eval_mod(tvm_vector_add, a, b, out=c)
 except tvm.TVMError as e:
     print(e)
 ```

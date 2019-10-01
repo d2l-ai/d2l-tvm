@@ -8,7 +8,6 @@ import d2ltvm as d2l
 
 Fibonacci number
 
-
 ```{.python .input}
 n = tvm.var('n')
 state = tvm.placeholder((n, ))
@@ -21,9 +20,8 @@ mod = tvm.build(s, [A])
 
 ```{.python .input}
 a = np.empty((10,), dtype='float32')
-d2l.eval_mod(mod, a)
+d2l.eval_mod(mod, out=a)
 a
 ```
 
 Cumulative sum
-

@@ -48,7 +48,7 @@ Now test the results are as expected.
 ```{.python .input  n=5}
 mod = tvm.build(s, [A, B])
 c = np.empty((3,), dtype='float32')
-d2l.eval_mod(mod, a, c)
+d2l.eval_mod(mod, a, out=c)
 np.testing.assert_equal(b, c)
 ```
 
@@ -66,7 +66,7 @@ Let's also verify the results.
 ```{.python .input  n=17}
 mod = tvm.build(s, [A, B])
 c = np.empty((), dtype='float32')
-d2l.eval_mod(mod, a, c)
+d2l.eval_mod(mod, a, out=c)
 np.testing.assert_equal(a.sum(), c)
 ```
 
@@ -114,7 +114,7 @@ Again, let's verify the results.
 ```{.python .input  n=28}
 mod = tvm.build(s, [A, B])
 b = np.empty((3,), dtype='float32')
-d2l.eval_mod(mod, a, b)
+d2l.eval_mod(mod, a, out=b)
 np.testing.assert_equal(a.prod(axis=1), b)
 ```
 

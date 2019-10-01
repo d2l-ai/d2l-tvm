@@ -25,7 +25,7 @@ s = tvm.create_schedule(C.op)
 tvm.lower(s, [A, B, C], simple_mode=True)
 ```
 
-Compared to the generated pseudo codes in :numref:`ch_vector_add`, we can see the upper value of the for loop is changed from 100 to `n`. 
+Compared to the generated pseudo codes in :numref:`ch_vector_add`, we can see the upper value of the for loop is changed from 100 to `n`.
 
 Next we put the test codes in the `test_mod` function to verify the compiled module is able to correctly execute on input vectors with different lengths.
 
@@ -33,12 +33,12 @@ Next we put the test codes in the `test_mod` function to verify the compiled mod
 def test_mod(mod, size):
     a, b = (np.random.normal(size=size).astype('float32') for _ in range(2))
     c = np.empty(size, dtype='float32')
-    d2l.eval_mod(mod, a, b, c)
+    d2l.eval_mod(mod, a, b, out=c)
     print('c.shape:', c.shape)
     np.testing.assert_equal(c, a + b)
-    
 
-mod = tvm.build(s, [A, B, C])    
+
+mod = tvm.build(s, [A, B, C])
 test_mod(mod, 5)
 test_mod(mod, 1000)
 ```
@@ -47,7 +47,7 @@ But note that we still place the constraint that `A`, `B`, and `C` should be the
 
 ## Multi-dimensional Shapes
 
-You may already note that a shape is presented as a list, a  tuple. A single element tuple means a 1-D tensor, or a vector. We can extend it to multi-dimensional tensors by adding variables to the shape list. 
+You may already note that a shape is presented as a list, a  tuple. A single element tuple means a 1-D tensor, or a vector. We can extend it to multi-dimensional tensors by adding variables to the shape list.
 
 The following function builds a module for multi-dimensional tensor addition, the number of dimensions is specified by `ndim`. Note that instead of using `lambda i, j: A[i, j] + B[i, j]` for `ndim=2` and `lambda i, j, k: A[i, j, k] + B[i, j, k]` for `ndim=3`, we use `*i` to handle the general multi-dimensional case.
 
@@ -57,7 +57,7 @@ def tvm_vector_add(ndim):
     B = tvm.placeholder(A.shape)
     C = tvm.compute(A.shape, lambda *i: A[i] + B[i])
     s = tvm.create_schedule(C.op)
-    return tvm.build(s, [A, B, C])    
+    return tvm.build(s, [A, B, C])
 ```
 
 Verify that it works beyond vectors.
@@ -72,5 +72,5 @@ test_mod(mod, (2,3,4,5))
 
 ## Summary
 
-- We can use `tvm.var()` when we don't know the shape beforehand. 
+- We can use `tvm.var()` when we don't know the shape beforehand.
 - The shape of a $n$-dimensional tensor is presented by a $n$-length list.

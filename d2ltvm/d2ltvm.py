@@ -11,16 +11,22 @@ import numpy as np
 from matplotlib import pyplot as plt
 from IPython import display
 
-# Defined in file: ./chapter_expression/vector_add.md
-def eval_mod(mod, *args):
-    tvm_args = [
-        tvm.nd.array(x) if isinstance(x, np.ndarray) else x for x in args]
-    mod(*tvm_args)
-    for x, y in zip(args, tvm_args):
-        if isinstance(x, np.ndarray):
-            np.copyto(x, y.asnumpy())
 
-# Defined in file: ./chapter_schedule/cpu/vector_add.md
+# Defined in file: ./chapter_expression/vector_add.md
+def eval_mod(mod, *inputs, out):
+    """Evaluate a TVM module, and save results in out.
+    """
+    # Convert all numpy arrays to tvm arrays
+    tvm_args = [tvm.nd.array(x) if isinstance(x, np.ndarray) 
+                else x for x in inputs + (out,)]
+    mod(*tvm_args)
+    # If out is a tvm array, then its value has already been inplaced. 
+    # Otherwise, explicitly copy the results. 
+    if isinstance(out, np.ndarray):
+        np.copyto(out, tvm_args[-1].asnumpy())
+
+
+# Defined in file: ./chapter_cpu_schedule/vector_add.md
 def plot(X, Y, xlabel=None, ylabel=None, legend=[], xlim=None,
          ylim=None, xscale='linear', yscale='linear', fmts=None,
          figsize=(6, 4)):
@@ -41,4 +47,5 @@ def plot(X, Y, xlabel=None, ylabel=None, legend=[], xlim=None,
     axes.set_ylim(ylim)
     if legend: axes.legend(legend)
     axes.grid()
+
 
