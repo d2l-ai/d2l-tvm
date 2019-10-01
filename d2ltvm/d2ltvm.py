@@ -49,3 +49,14 @@ def plot(X, Y, xlabel=None, ylabel=None, legend=[], xlim=None,
     axes.grid()
 
 
+# Defined in file: ./chapter_cpu_schedule/matrix_product.md
+def matrix_product(n):
+    k = tvm.reduce_axis((0, n), name='k')
+    A = tvm.placeholder((n, n), name='A')
+    B = tvm.placeholder((n, n), name='B')
+    C = tvm.compute(
+        (n, n), lambda x, y: tvm.sum(A[x, k] * B[k, y], axis=k), name='C')
+    s = tvm.create_schedule(C.op)
+    return s, (A, B, C)
+
+
