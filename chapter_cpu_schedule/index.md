@@ -7,5 +7,5 @@
 arch
 call_overhead
 vector_add
-matrix_product
+matrix_multiplication
 ```
