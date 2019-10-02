@@ -1,4 +1,5 @@
 # Matrix Multiplication
+:label:`ch_matmul_cpu`
 
 We mentioned in :numref:`ch_cpu_arch` that matrix multiplication is a widely used performance benchmark workload, and the NumPy `dot` operator nearly reaches the peak performance of the Xeon E5-2686 v4 CPU. In this chapter, we will investigate multiple scheduling strategies for this operator.
 
@@ -12,7 +13,6 @@ import d2ltvm as d2l
 We first define benchmark functions to measure the GFLOPS. To simplify the measurement, we only consider square matrices. Extending to non-square cases is straightforward. Then let's reproduce the matrix multiplication result in :numref:`ch_cpu_arch`.
 
 ```{.python .input  n=2}
-# Save to the d2ltvm package.
 def benchmark_square_matmul(func, n, constructor=None):
     x = np.random.normal(size=(n, n)).astype(np.float32)
     y = np.random.normal(size=(n, n)).astype(np.float32)
@@ -25,20 +25,20 @@ def benchmark_square_matmul(func, n, constructor=None):
 def np_dot(x, y, z):
     np.dot(x, y, out=z)
     
-benchmark_square_matmul(np_dot, 1024)
+#benchmark_square_matmul(np_dot, 1024)
 ```
 
 Now we benchmark the performance on various input sizes as our baseline.
 
 ```{.python .input  n=3}
 def benchmark(func, constructor=None):
-    gflops, sizes = [], 2**np.arange(5, 12, 1)
+    gflops, sizes = [], (2**np.arange(5, 12, 1)).tolist()
     np.random.seed(0)
     for n in sizes:
-        gflops.append(benchmark_square_matmul(func, n, constructor))
+        gflops.append(benchmark_square_matmul(func(n), n, constructor))
     return sizes, gflops
 
-sizes, np_gflops = benchmark(np_dot)
+sizes, np_gflops = benchmark(lambda n: np_dot)
 ```
 
 ## Default Schedule
@@ -65,20 +65,20 @@ def matrix_product(n):
     return (A, B, C)
 ```
 
-The default schedule follows the computation illustrated in :numref:`fig_matmul_default`. 
+The default schedule follows the computation illustrated in :numref:`fig_matmul_default`.
 
 ```{.python .input  n=22}
-A, B, C = matrix_product(tvm.var('n'))
-s = tvm.create_schedule(C.op)
+def benchmark_tvm(schedule_updater=None):
+    def func(n):
+        A, B, C = matrix_product(n)
+        s = tvm.create_schedule(C.op)
+        if schedule_updater is not None: 
+            schedule_updater(s, C)
+        mod = tvm.build(s, [A, B, C], target='llvm -mcpu=core-avx2')
+        return mod
+    return func
 
-def benchmark_tvm(s):
-    prog = tvm.lower(s, [A, B, C], simple_mode=True)
-    # Only print if the program is relatively simple
-    if len(prog.__str__().split('\n')) < 20: print(prog)
-    mod = tvm.build(s, [A, B, C])
-    return benchmark(mod, tvm.nd.array)[1]
-
-default_gflops = benchmark_tvm(s)
+_, default_gflops = benchmark(benchmark_tvm(), tvm.nd.array)
 ```
 
 It's not surprised to see that the default schedule doesn't perform well, especially on large matrices that cannot fit into the cache.
@@ -102,10 +102,11 @@ The first problem we can see from :numref:`fig_matmul_default` is that $B$ is ac
 To implement it, we change the axes order from (`x`, `y`, `k`) to (`x`, `k`, `y`) by the `reorder` method.
 
 ```{.python .input  n=8}
-s = tvm.create_schedule(C.op)
-(x, y), (k,) = C.op.axis, C.op.reduce_axis
-s[C].reorder(x, k, y)
-reorder_gflops = benchmark_tvm(s)
+def reorder(s, C):
+    (x, y), (k,) = C.op.axis, C.op.reduce_axis
+    s[C].reorder(x, k, y)
+    
+_, reorder_gflops = benchmark(benchmark_tvm(reorder), tvm.nd.array)    
 ```
 
 We can see that the reordering significantly improves the performance compared to the default schedule.
@@ -120,11 +121,15 @@ plot([np_gflops, default_gflops, reorder_gflops],
 In the outermost for-loop, each time we compute the results of a row in $C$. Each row can be computed in parallel, so we can make the schedule be parallelized on axis `x`.
 
 ```{.python .input  n=10}
-s = tvm.create_schedule(C.op)
-(x, y), (k,) = C.op.axis, C.op.reduce_axis
-s[C].reorder(x, k, y)
-s[C].parallel(x)
-parallel_gflops = benchmark_tvm(s)
+import os 
+os.environ["TVM_NUM_THREADS"] = '16'
+
+def parallel(s, C):
+    (x, y), (k,) = C.op.axis, C.op.reduce_axis
+    s[C].reorder(x, k, y)
+    s[C].parallel(x)
+    
+_, parallel_gflops = benchmark(benchmark_tvm(parallel), tvm.nd.array)    
 ```
 
 Parallelization improves the performance again. But we can see that there is still a gap compared to NumPy on large matrices.
@@ -154,36 +159,40 @@ Let's implement this idea. We first split each axis into two by the `split` meth
 
 ```{.python .input  n=39}
 # The tiling sizes
-tx, ty, tk = 2, 8, 4
+tx, ty, tk = 8, 8, 8
 
-s = tvm.create_schedule(C.op)
-(x, y), (k,) = C.op.axis, C.op.reduce_axis
+def block(s, C):    
+    (x, y), (k,) = C.op.axis, C.op.reduce_axis
 
-xo, xi = s[C].split(x, tx)
-yo, yi = s[C].split(y, ty)
-ko, ki = s[C].split(k, tk)
+    xo, xi = s[C].split(x, tx)
+    yo, yi = s[C].split(y, ty)
+    ko, ki = s[C].split(k, tk)
 
-s[C].reorder(xo, ko, yo, xi, ki, yi)
-s[C].vectorize(yi)
-s[C].unroll(xi)
-s[C].unroll(ki)
-s[C].parallel(xo)
-        
-block_gflops = benchmark_tvm(s)
+    s[C].reorder(xo, ko, yo, xi, ki, yi)
+    s[C].vectorize(yi)
+    s[C].unroll(xi)
+    s[C].unroll(ki)
+    s[C].parallel(xo)
+
+    
+_, block_gflops = benchmark(benchmark_tvm(block), tvm.nd.array)    
+
 ```
 
-As you can seen, block tiling not always improves the performance. There are three reasons. First, re-constructing the matrices into blocks has overhead. Second, the granularity of the parallelized workloads is `tx` times more coarse, which may decrease performance when `n` is relatively small. Third, the tiling sizes may not be optimal. 
+As you can seen, block tiling not always improves the performance. There are three reasons. First, re-constructing the matrices into blocks has overhead. Second, the granularity of the parallelized workloads is `tx` times more coarse, which may decrease performance when `n` is relatively small. Third, the tiling sizes may not be optimal.
 
 ```{.python .input  n=40}
 plot([np_gflops, default_gflops, reorder_gflops, parallel_gflops, block_gflops], 
      ['numpy', 'default', 'reorder', '+ parallel', '+ block'])
 ```
 
-Finally, let's print the GFLOPS for $n=1024$ and improve it in the next section. 
+Finally, let's print the GFLOPS for $n=1024$ and improve it in the next section.
 
 ```{.python .input}
-mod = tvm.build(s, [A, B, C])
-benchmark_square_matmul(mod, 1024, tvm.nd.array)
+n = 1024
+mod = benchmark_tvm(block)(n)
+benchmark_square_matmul(mod, n, tvm.nd.array)
+
 ```
 
 ## Summary
