@@ -50,12 +50,30 @@ def plot(X, Y, xlabel=None, ylabel=None, legend=[], xlim=None,
 
 
 # Defined in file: ./chapter_cpu_schedule/matrix_multiplication.md
-def matrix_product(n):
+def square_matmul(n):
+    """Return the computing expression of square matrix multiplication. 
+    """
     k = tvm.reduce_axis((0, n), name='k')
     A = tvm.placeholder((n, n), name='A')
     B = tvm.placeholder((n, n), name='B')
     C = tvm.compute(
         (n, n), lambda x, y: tvm.sum(A[x, k] * B[k, y], axis=k), name='C')
     return (A, B, C)
+
+
+# Defined in file: ./chapter_cpu_schedule/matrix_multiplication.md
+def square_matmul_module(schedule_updater=None, 
+                         target='llvm -mcpu=core-avx2'):
+    """Returns a function that accepts the input size n to return
+    a TVM module. 
+    """
+    def func(n):
+        A, B, C = square_matmul(n)
+        s = tvm.create_schedule(C.op)
+        if schedule_updater is not None: 
+            schedule_updater(s, C)
+        mod = tvm.build(s, [A, B, C], target=target)
+        return mod
+    return func
 
 

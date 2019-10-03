@@ -25,10 +25,10 @@ def benchmark_square_matmul(func, n, constructor=None):
 def np_dot(x, y, z):
     np.dot(x, y, out=z)
     
-#benchmark_square_matmul(np_dot, 1024)
+benchmark_square_matmul(np_dot, 1024)
 ```
 
-Now we benchmark the performance on various input sizes as our baseline.
+Now we benchmark the performance on various input sizes as our baseline. Note that the `func` accepts the matrix size to return a benchmark function.
 
 ```{.python .input  n=3}
 def benchmark(func, constructor=None):
@@ -56,7 +56,9 @@ The following function returns the computing expression of matrix multiplication
 
 ```{.python .input  n=4}
 # Save to the d2ltvm package.
-def matrix_product(n):
+def square_matmul(n):
+    """Return the computing expression of square matrix multiplication. 
+    """
     k = tvm.reduce_axis((0, n), name='k')
     A = tvm.placeholder((n, n), name='A')
     B = tvm.placeholder((n, n), name='B')
@@ -65,22 +67,28 @@ def matrix_product(n):
     return (A, B, C)
 ```
 
-The default schedule follows the computation illustrated in :numref:`fig_matmul_default`.
+An operator has a better performance when the shape is known before compilation. That's passing `n=1024` performs better than `n=tvm.var()`. Therefore, we will compile a module for each shape. The following function returns a function that can be used by `benchmark`.
 
 ```{.python .input  n=22}
-def benchmark_tvm(schedule_updater=None):
+# Save to the d2ltvm package.
+def square_matmul_module(schedule_updater=None, 
+                         target='llvm -mcpu=core-avx2'):
+    """Returns a function that accepts the input size n to return
+    a TVM module. 
+    """
     def func(n):
-        A, B, C = matrix_product(n)
+        A, B, C = square_matmul(n)
         s = tvm.create_schedule(C.op)
         if schedule_updater is not None: 
             schedule_updater(s, C)
-        mod = tvm.build(s, [A, B, C], target='llvm -mcpu=core-avx2')
+        mod = tvm.build(s, [A, B, C], target=target)
         return mod
     return func
 
-_, default_gflops = benchmark(benchmark_tvm(), tvm.nd.array)
+_, default_gflops = benchmark(square_matmul_module(), tvm.nd.array)
 ```
 
+The default schedule follows the computation illustrated in :numref:`fig_matmul_default`.
 It's not surprised to see that the default schedule doesn't perform well, especially on large matrices that cannot fit into the cache.
 
 ```{.python .input  n=7}
@@ -106,7 +114,7 @@ def reorder(s, C):
     (x, y), (k,) = C.op.axis, C.op.reduce_axis
     s[C].reorder(x, k, y)
     
-_, reorder_gflops = benchmark(benchmark_tvm(reorder), tvm.nd.array)    
+_, reorder_gflops = benchmark(square_matmul_module(reorder), tvm.nd.array)    
 ```
 
 We can see that the reordering significantly improves the performance compared to the default schedule.
@@ -118,7 +126,7 @@ plot([np_gflops, default_gflops, reorder_gflops],
 
 ## Parallelization
 
-In the outermost for-loop, each time we compute the results of a row in $C$. Each row can be computed in parallel, so we can make the schedule be parallelized on axis `x`.
+In the outermost for-loop, each time we compute the results of a row in $C$. Each row can be computed in parallel, so we can make the schedule be parallelized on axis `x`. As discussed in :numref:`ch_cpu_arch`, despite our OS claims there are 32 threads, our CPU only has 16 cores. Here we
 
 ```{.python .input  n=10}
 import os 
@@ -129,14 +137,14 @@ def parallel(s, C):
     s[C].reorder(x, k, y)
     s[C].parallel(x)
     
-_, parallel_gflops = benchmark(benchmark_tvm(parallel), tvm.nd.array)    
+_, parallel_gflops = benchmark(square_matmul_module(parallel), tvm.nd.array)    
 ```
 
 Parallelization improves the performance again. But we can see that there is still a gap compared to NumPy on large matrices.
 
 ```{.python .input  n=11}
 plot([np_gflops, default_gflops, reorder_gflops, parallel_gflops], 
-     ['numpy', 'default', 'reorder', '+ parallel'])
+     ['numpy', 'default', 'reorder', '+parallel'])
 ```
 
 ## Block Tiling
@@ -155,11 +163,11 @@ It is also illustrate in :numref:`fig_matmul_block`. If we choose proper tiling 
 ![](../img/matmul_block.svg)
 :label:`fig_matmul_block`
 
-Let's implement this idea. We first split each axis into two by the `split` method with the specified tilling sizes, which are tunable hyper-parameters. Then we reorder the axis into two parts, each part has three for-loops. The inner part performs matrix multiplication on two submatrices, while the outer part iterates over all submatrices. Similarly as before, we parallelize the workloads in the outermost for loop. In addition, we hint the compiler to use vectorized instructions, such as `avx`, for the innermost for loop, and unroll the other two loops in the inner part.
+Let's implement this idea. We first split each axis into two by the `split` method with the specified tilling sizes, which are tunable hyper-parameters. Then we reorder the axis into two parts, each part has three for-loops. The inner part performs matrix multiplication on two submatrices, while the outer part iterates over all submatrices. Similarly as before, we parallelize the workloads in the outermost for loop. In addition, we hint the compiler to use vectorized instructions for the innermost for loop, and unroll the other axis except for the reduce axis in the inner part.
 
 ```{.python .input  n=39}
 # The tiling sizes
-tx, ty, tk = 8, 8, 8
+tx, ty, tk = 4, 8, 4
 
 def block(s, C):    
     (x, y), (k,) = C.op.axis, C.op.reduce_axis
@@ -168,35 +176,39 @@ def block(s, C):
     yo, yi = s[C].split(y, ty)
     ko, ki = s[C].split(k, tk)
 
-    s[C].reorder(xo, ko, yo, xi, ki, yi)
+    s[C].reorder(xo, ko, yo, ki, xi, yi)
     s[C].vectorize(yi)
     s[C].unroll(xi)
-    s[C].unroll(ki)
     s[C].parallel(xo)
 
     
-_, block_gflops = benchmark(benchmark_tvm(block), tvm.nd.array)    
-
+_, block_gflops = benchmark(square_matmul_module(block), tvm.nd.array)
 ```
 
-As you can seen, block tiling not always improves the performance. There are three reasons. First, re-constructing the matrices into blocks has overhead. Second, the granularity of the parallelized workloads is `tx` times more coarse, which may decrease performance when `n` is relatively small. Third, the tiling sizes may not be optimal.
+As you can seen, block tiling improves the performance especially when for large matrices. 
 
 ```{.python .input  n=40}
 plot([np_gflops, default_gflops, reorder_gflops, parallel_gflops, block_gflops], 
-     ['numpy', 'default', 'reorder', '+ parallel', '+ block'])
+     ['numpy', 'default', 'reorder', '+parallel', '+block'])
 ```
 
 Finally, let's print the GFLOPS for $n=1024$ and improve it in the next section.
 
 ```{.python .input}
 n = 1024
-mod = benchmark_tvm(block)(n)
+mod = square_matmul_module(block)(n)
 benchmark_square_matmul(mod, n, tvm.nd.array)
-
 ```
 
 ## Summary
 
 1. Reordering the for-loops in matrix multiplication properly improves the performance. 
-2. Parallelization is also important.
-3. Block tiling may further improve the performance.
+1. Parallelization is also important.
+1. Block tiling may further improve the performance.
+
+## Exercises
+
+1. Change the number of threads
+1. Change the tiling sizes
+1. Try a different axes order in function `parallel` and `block`
+1. Benchmark larger matrix sizes
