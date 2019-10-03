@@ -7,6 +7,5 @@
 arch
 call_overhead
 vector_add
-matrix_multiplication
-auto_matrix_multiplication
+matmul
 ```
