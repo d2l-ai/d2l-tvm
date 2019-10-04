@@ -7,6 +7,8 @@ d2ltvm = sys.modules[__name__]
 
 # Defined in file: ./chapter_install/install.md
 import tvm
+import time
+import timeit
 import numpy as np
 from matplotlib import pyplot as plt
 from IPython import display
@@ -49,31 +51,44 @@ def plot(X, Y, xlabel=None, ylabel=None, legend=[], xlim=None,
     axes.grid()
 
 
-# Defined in file: ./chapter_cpu_schedule/matrix_multiplication.md
-def square_matmul(n):
-    """Return the computing expression of square matrix multiplication. 
-    """
-    k = tvm.reduce_axis((0, n), name='k')
-    A = tvm.placeholder((n, n), name='A')
-    B = tvm.placeholder((n, n), name='B')
-    C = tvm.compute(
-        (n, n), lambda x, y: tvm.sum(A[x, k] * B[k, y], axis=k), name='C')
-    return (A, B, C)
+# Defined in file: ./chapter_cpu_schedule/matmul.md
+def benchmark_square_matmul_np(n):
+    nrepeat = max(int(1e9/n**3), 5)
+    time = timeit.timeit(
+        setup='import numpy as np\n'
+        'n = ' + str(n) + '\n'
+        'x = np.random.normal(size=(n, n)).astype(np.float32)\n'
+        'y = np.random.normal(size=(n, n)).astype(np.float32)\n'
+        'z = np.empty_like(x)\n',
+        stmt = 'np.dot(x, y, out=z);',
+        number = nrepeat)
+    return 2 * n**3 / time / 1e9 * nrepeat
 
 
-# Defined in file: ./chapter_cpu_schedule/matrix_multiplication.md
-def square_matmul_module(schedule_updater=None, 
-                         target='llvm -mcpu=core-avx2'):
-    """Returns a function that accepts the input size n to return
-    a TVM module. 
-    """
-    def func(n):
-        A, B, C = square_matmul(n)
-        s = tvm.create_schedule(C.op)
-        if schedule_updater is not None: 
-            schedule_updater(s, C)
-        mod = tvm.build(s, [A, B, C], target=target)
-        return mod
-    return func
+# Defined in file: ./chapter_cpu_schedule/matmul.md
+def benchmark_square_matmul_tvm(n, generator, target='llvm -mcpu=core-avx2'):
+    # Compile
+    s, [A, B, C] = generator(int(n))
+    mod = tvm.build(s, [A, B, C], target=target)
+    # Prepare inputs and outputs
+    x = np.random.normal(size=(n, n)).astype(np.float32)
+    y = np.random.normal(size=(n, n)).astype(np.float32)
+    z = np.empty_like(x)
+    ctx = tvm.context(target, 0)
+    x, y, z = tvm.nd.array(x, ctx), tvm.nd.array(y, ctx), tvm.nd.array(z, ctx)
+    # Estimate the #runs to roughly benchmark for 1 second
+    start = time.time()
+    mod(x, y, z)
+    nrepeat = int(max(1.0/(time.time() - start), 1))
+    timer = mod.time_evaluator(mod.entry_name, ctx=ctx, number=nrepeat)
+    return 2 * n**3 / timer(x, y, z).mean / 1e9
+
+
+# Defined in file: ./chapter_cpu_schedule/matmul.md
+def plot_gflops(sizes, gflops, legend):
+    d2ltvm.plot(sizes, gflops, xlabel='Size', ylabel='GFLOPS', 
+             xscale='log', yscale='log', 
+             legend=legend, fmts=['--']*(len(gflops)-1)+['-'])
+    
 
 

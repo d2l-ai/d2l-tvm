@@ -3,42 +3,39 @@
 
 We mentioned in :numref:`ch_cpu_arch` that matrix multiplication is a widely used performance benchmark workload, and the NumPy `dot` operator nearly reaches the peak performance of the Xeon E5-2686 v4 CPU. In this chapter, we will investigate multiple scheduling strategies for this operator.
 
-```{.python .input  n=1}
+```{.python .input  n=2}
 %matplotlib inline
 import tvm
 import numpy as np
-import d2ltvm as d2l
+import d2ltvm 
+import timeit
+import time
 ```
 
 We first define benchmark functions to measure the GFLOPS. To simplify the measurement, we only consider square matrices. Extending to non-square cases is straightforward. Then let's reproduce the matrix multiplication result in :numref:`ch_cpu_arch`.
 
-```{.python .input  n=2}
-def benchmark_square_matmul(func, n, constructor=None):
-    x = np.random.normal(size=(n, n)).astype(np.float32)
-    y = np.random.normal(size=(n, n)).astype(np.float32)
-    z = np.empty_like(x)
-    if constructor:
-        x, y, z = constructor(x), constructor(y), constructor(z)
-    res = %timeit -o -q -r3 func(x, y, z)
-    return 2 * n ** 3 / res.average / 1e9
+```{.python .input  n=28}
+# Save to the d2ltvm package.
+def benchmark_square_matmul_np(n):
+    nrepeat = max(int(1e9/n**3), 5)
+    time = timeit.timeit(
+        setup='import numpy as np\n'
+        'n = ' + str(n) + '\n'
+        'x = np.random.normal(size=(n, n)).astype(np.float32)\n'
+        'y = np.random.normal(size=(n, n)).astype(np.float32)\n'
+        'z = np.empty_like(x)\n',
+        stmt = 'np.dot(x, y, out=z);',
+        number = nrepeat)
+    return 2 * n**3 / time / 1e9 * nrepeat
 
-def np_dot(x, y, z):
-    np.dot(x, y, out=z)
-    
-benchmark_square_matmul(np_dot, 1024)
+benchmark_square_matmul_np(1024)
 ```
 
-Now we benchmark the performance on various input sizes as our baseline. Note that the `func` accepts the matrix size to return a benchmark function.
+Next we define a function to benchmark multiple input shapes.
 
-```{.python .input  n=3}
-def benchmark(func, constructor=None):
-    gflops, sizes = [], (2**np.arange(5, 14, 1)).tolist()
-    np.random.seed(0)
-    for n in sizes:
-        gflops.append(benchmark_square_matmul(func(n), n, constructor))
-    return sizes, gflops
-
-sizes, np_gflops = benchmark(lambda n: np_dot)
+```{.python .input  n=21}
+sizes = 2**np.arange(5, 12, 1)
+np_gflops = [benchmark_square_matmul_np(n) for n in sizes]
 ```
 
 ## Default Schedule
@@ -55,49 +52,55 @@ The elements assessed to compute $C_{i,j}$ are illustrated in :numref:`fig_matmu
 The following function returns the computing expression of matrix multiplication.
 
 ```{.python .input  n=4}
-# Save to the d2ltvm package.
 def square_matmul(n):
     """Return the computing expression of square matrix multiplication. 
     """
+    n = int(n)
     k = tvm.reduce_axis((0, n), name='k')
     A = tvm.placeholder((n, n), name='A')
     B = tvm.placeholder((n, n), name='B')
     C = tvm.compute(
         (n, n), lambda x, y: tvm.sum(A[x, k] * B[k, y], axis=k), name='C')
-    return (A, B, C)
+    return tvm.create_schedule(C.op), (A, B, C)
 ```
 
-An operator has a better performance when the shape is known before compilation. That's passing `n=1024` performs better than `n=tvm.var()`. Therefore, we will compile a module for each shape. The following function returns a function that can be used by `benchmark`.
+Now let's check the performance of the default schedule. Note that an operator has a better performance when the shape is known before compilation. That's passing `n=1024` performs better than `n=tvm.var()`. Therefore, we will compile a module for each shape. 
+
+The following function returns a function that can be used by `benchmark`.
 
 ```{.python .input  n=22}
 # Save to the d2ltvm package.
-def square_matmul_module(schedule_updater=None, 
-                         target='llvm -mcpu=core-avx2'):
-    """Returns a function that accepts the input size n to return
-    a TVM module. 
-    """
-    def func(n):
-        A, B, C = square_matmul(n)
-        s = tvm.create_schedule(C.op)
-        if schedule_updater is not None: 
-            schedule_updater(s, C)
-        mod = tvm.build(s, [A, B, C], target=target)
-        return mod
-    return func
+def benchmark_square_matmul_tvm(n, generator, target='llvm -mcpu=core-avx2'):
+    # Compile
+    s, [A, B, C] = generator(int(n))
+    mod = tvm.build(s, [A, B, C], target=target)
+    # Prepare inputs and outputs
+    x = np.random.normal(size=(n, n)).astype(np.float32)
+    y = np.random.normal(size=(n, n)).astype(np.float32)
+    z = np.empty_like(x)
+    ctx = tvm.context(target, 0)
+    x, y, z = tvm.nd.array(x, ctx), tvm.nd.array(y, ctx), tvm.nd.array(z, ctx)
+    # Estimate the #runs to roughly benchmark for 1 second
+    start = time.time()
+    mod(x, y, z)
+    nrepeat = int(max(1.0/(time.time() - start), 1))
+    timer = mod.time_evaluator(mod.entry_name, ctx=ctx, number=nrepeat)
+    return 2 * n**3 / timer(x, y, z).mean / 1e9
 
-_, default_gflops = benchmark(square_matmul_module(), tvm.nd.array)
+default_gflops = [benchmark_square_matmul_tvm(n, square_matmul) for n in sizes]
 ```
 
 The default schedule follows the computation illustrated in :numref:`fig_matmul_default`.
 It's not surprised to see that the default schedule doesn't perform well, especially on large matrices that cannot fit into the cache.
 
 ```{.python .input  n=7}
-def plot(gflops, legend):
-    d2l.plot(sizes, gflops, xlabel='Matrix width/height', ylabel='GFLOPS', 
+# Save to the d2ltvm package
+def plot_gflops(sizes, gflops, legend):
+    d2ltvm.plot(sizes, gflops, xlabel='Size', ylabel='GFLOPS', 
              xscale='log', yscale='log', 
              legend=legend, fmts=['--']*(len(gflops)-1)+['-'])
     
-plot([np_gflops, default_gflops], ['numpy', 'default'])
+plot_gflops(sizes, [np_gflops, default_gflops], ['numpy', 'default'])
 ```
 
 ## Reordering Axes
@@ -110,14 +113,16 @@ The first problem we can see from :numref:`fig_matmul_default` is that $B$ is ac
 To implement it, we change the axes order from (`x`, `y`, `k`) to (`x`, `k`, `y`) by the `reorder` method.
 
 ```{.python .input  n=8}
-def reorder(s, C):
+def reorder(n):
+    s, (A, B, C) = square_matmul(n)
     (x, y), (k,) = C.op.axis, C.op.reduce_axis
     s[C].reorder(x, k, y)
-    
-_, reorder_gflops = benchmark(square_matmul_module(reorder), tvm.nd.array) 
+    return s, (A, B, C)
 
-plot([np_gflops, default_gflops, reorder_gflops], 
-     ['numpy', 'default', 'reorder'])
+reorder_gflops = [benchmark_square_matmul_tvm(n, reorder) for n in sizes]
+
+plot_gflops(sizes, [np_gflops, default_gflops, reorder_gflops], 
+            ['numpy', 'default', 'reorder'])
 ```
 
 We can see that the reordering significantly improves the performance compared to the default schedule.
@@ -130,15 +135,17 @@ In the outermost for-loop, each time we compute the results of a row in $C$. Eac
 import os 
 os.environ["TVM_NUM_THREADS"] = '16'
 
-def parallel(s, C):
+def parallel(n):
+    s, (A, B, C) = square_matmul(n)
     (x, y), (k,) = C.op.axis, C.op.reduce_axis
     s[C].reorder(x, k, y)
     s[C].parallel(x)
+    return s, (A, B, C)
     
-_, parallel_gflops = benchmark(square_matmul_module(parallel), tvm.nd.array)    
+parallel_gflops = [benchmark_square_matmul_tvm(n, parallel) for n in sizes]
 
-plot([np_gflops, default_gflops, reorder_gflops, parallel_gflops], 
-     ['numpy', 'default', 'reorder', '+parallel'])
+plot_gflops(sizes, [np_gflops, default_gflops, reorder_gflops, parallel_gflops], 
+            ['numpy', 'default', 'reorder', '+parallel'])
 ```
 
 Parallelization improves the performance again. But we can see that there is still a gap compared to NumPy on large matrices, specially when they cannot fit into the L2 cache. We will try to resolve it in the next chapter.  
