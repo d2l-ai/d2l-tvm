@@ -14,7 +14,7 @@ import time
 
 We first define benchmark functions to measure the GFLOPS. To simplify the measurement, we only consider square matrices. Extending to non-square cases is straightforward. Then let's reproduce the matrix multiplication result in :numref:`ch_cpu_arch`.
 
-```{.python .input  n=6}
+```{.python .input  n=28}
 # Save to the d2ltvm package.
 def benchmark_square_matmul_np(n):
     timer = timeit.Timer(
@@ -31,19 +31,6 @@ def benchmark_square_matmul_np(n):
     return 2 * n**3 / time / 1e9 * nrepeat
 
 benchmark_square_matmul_np(1024)
-```
-
-```{.json .output n=6}
-[
- {
-  "data": {
-   "text/plain": "517.7183194437663"
-  },
-  "execution_count": 6,
-  "metadata": {},
-  "output_type": "execute_result"
- }
-]
 ```
 
 Next we define a function to benchmark multiple input shapes.
