@@ -53,16 +53,31 @@ def plot(X, Y, xlabel=None, ylabel=None, legend=[], xlim=None,
 
 # Defined in file: ./chapter_cpu_schedule/matmul.md
 def benchmark_square_matmul_np(n):
-    nrepeat = max(int(1e9/n**3), 5)
-    time = timeit.timeit(
+    timer = timeit.Timer(
         setup='import numpy as np\n'
         'n = ' + str(n) + '\n'
         'x = np.random.normal(size=(n, n)).astype(np.float32)\n'
         'y = np.random.normal(size=(n, n)).astype(np.float32)\n'
         'z = np.empty_like(x)\n',
-        stmt = 'np.dot(x, y, out=z);',
-        number = nrepeat)
+        stmt = 'np.dot(x, y, out=z);')
+    # Estimate the #repeat to run for 1 second
+    time = timer.timeit(1)
+    nrepeat = max(int(1.0/time), 5) 
+    time = timer.timeit(nrepeat) 
     return 2 * n**3 / time / 1e9 * nrepeat
+
+
+# Defined in file: ./chapter_cpu_schedule/matmul.md
+def square_matmul_default(n):
+    """Return the computing expression of square matrix multiplication with
+    the default schedule.
+    """
+    k = tvm.reduce_axis((0, n), name='k')
+    A = tvm.placeholder((n, n), name='A')
+    B = tvm.placeholder((n, n), name='B')
+    C = tvm.compute(
+        (n, n), lambda x, y: tvm.sum(A[x, k] * B[k, y], axis=k), name='C')
+    return tvm.create_schedule(C.op), (A, B, C)
 
 
 # Defined in file: ./chapter_cpu_schedule/matmul.md

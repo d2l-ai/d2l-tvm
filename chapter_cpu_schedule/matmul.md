@@ -14,21 +14,36 @@ import time
 
 We first define benchmark functions to measure the GFLOPS. To simplify the measurement, we only consider square matrices. Extending to non-square cases is straightforward. Then let's reproduce the matrix multiplication result in :numref:`ch_cpu_arch`.
 
-```{.python .input  n=28}
+```{.python .input  n=6}
 # Save to the d2ltvm package.
 def benchmark_square_matmul_np(n):
-    nrepeat = max(int(1e9/n**3), 5)
-    time = timeit.timeit(
+    timer = timeit.Timer(
         setup='import numpy as np\n'
         'n = ' + str(n) + '\n'
         'x = np.random.normal(size=(n, n)).astype(np.float32)\n'
         'y = np.random.normal(size=(n, n)).astype(np.float32)\n'
         'z = np.empty_like(x)\n',
-        stmt = 'np.dot(x, y, out=z);',
-        number = nrepeat)
+        stmt = 'np.dot(x, y, out=z);')
+    # Estimate the #repeat to run for 1 second
+    time = timer.timeit(1)
+    nrepeat = max(int(1.0/time), 5) 
+    time = timer.timeit(nrepeat) 
     return 2 * n**3 / time / 1e9 * nrepeat
 
 benchmark_square_matmul_np(1024)
+```
+
+```{.json .output n=6}
+[
+ {
+  "data": {
+   "text/plain": "517.7183194437663"
+  },
+  "execution_count": 6,
+  "metadata": {},
+  "output_type": "execute_result"
+ }
+]
 ```
 
 Next we define a function to benchmark multiple input shapes.
@@ -52,10 +67,11 @@ The elements assessed to compute $C_{i,j}$ are illustrated in :numref:`fig_matmu
 The following function returns the computing expression of matrix multiplication.
 
 ```{.python .input  n=4}
-def square_matmul(n):
-    """Return the computing expression of square matrix multiplication. 
+# Save to the d2ltvm package.
+def square_matmul_default(n):
+    """Return the computing expression of square matrix multiplication with
+    the default schedule.
     """
-    n = int(n)
     k = tvm.reduce_axis((0, n), name='k')
     A = tvm.placeholder((n, n), name='A')
     B = tvm.placeholder((n, n), name='B')
@@ -87,7 +103,7 @@ def benchmark_square_matmul_tvm(n, generator, target='llvm -mcpu=core-avx2'):
     timer = mod.time_evaluator(mod.entry_name, ctx=ctx, number=nrepeat)
     return 2 * n**3 / timer(x, y, z).mean / 1e9
 
-default_gflops = [benchmark_square_matmul_tvm(n, square_matmul) for n in sizes]
+default_gflops = [benchmark_square_matmul_tvm(n, square_matmul_default) for n in sizes]
 ```
 
 The default schedule follows the computation illustrated in :numref:`fig_matmul_default`.
@@ -114,7 +130,7 @@ To implement it, we change the axes order from (`x`, `y`, `k`) to (`x`, `k`, `y`
 
 ```{.python .input  n=8}
 def reorder(n):
-    s, (A, B, C) = square_matmul(n)
+    s, (A, B, C) = square_matmul_default(n)
     (x, y), (k,) = C.op.axis, C.op.reduce_axis
     s[C].reorder(x, k, y)
     return s, (A, B, C)
@@ -136,7 +152,7 @@ import os
 os.environ["TVM_NUM_THREADS"] = '16'
 
 def parallel(n):
-    s, (A, B, C) = square_matmul(n)
+    s, (A, B, C) = square_matmul_default(n)
     (x, y), (k,) = C.op.axis, C.op.reduce_axis
     s[C].reorder(x, k, y)
     s[C].parallel(x)

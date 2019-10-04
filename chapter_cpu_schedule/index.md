@@ -8,4 +8,5 @@ arch
 call_overhead
 vector_add
 matmul
+block_matmul
 ```
