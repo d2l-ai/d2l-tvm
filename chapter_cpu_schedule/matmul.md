@@ -40,10 +40,6 @@ sizes = 2**np.arange(5, 12, 1)
 np_gflops = [benchmark_square_matmul_np(n) for n in sizes]
 ```
 
-```{.python .input}
-np_gflops
-```
-
 ## Default Schedule
 
 Given $A, B \in\mathbb R^{n\times n}$, if $C=AB$ then 
@@ -94,7 +90,7 @@ def benchmark_square_matmul_tvm(n, generator, target='llvm -mcpu=core-avx2'):
     timer = mod.time_evaluator(mod.entry_name, ctx=ctx, number=nrepeat)
     return 2 * n**3 / timer(x, y, z).mean / 1e9
 
-#default_gflops = [benchmark_square_matmul_tvm(n, square_matmul_default) for n in sizes]
+default_gflops = [benchmark_square_matmul_tvm(n, square_matmul_default) for n in sizes]
 ```
 
 The default schedule follows the computation illustrated in :numref:`fig_matmul_default`.
@@ -107,7 +103,7 @@ def plot_gflops(sizes, gflops, legend):
              xscale='log', yscale='log', 
              legend=legend, fmts=['--']*(len(gflops)-1)+['-'])
     
-#plot_gflops(sizes, [np_gflops, default_gflops], ['numpy', 'default'])
+plot_gflops(sizes, [np_gflops, default_gflops], ['numpy', 'default'])
 ```
 
 ## Reordering Axes
