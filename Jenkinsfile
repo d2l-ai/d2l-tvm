@@ -11,7 +11,7 @@ stage("Build and Publish") {
       rm -rf ~/miniconda3/envs/${ENV_NAME}
       conda create -n ${ENV_NAME} pip python=3.7.3 -y
       conda activate ${ENV_NAME}
-      pip install mxnet-cu101mkl>=1.6.0b20191004
+      pip install mxnet-cu101mkl==1.6.0b20191004
       pip install psutil
       pip install https://tvm-repo.s3-us-west-2.amazonaws.com/tvm-0.6.dev0-cp37-cp37m-linux_x86_64.whl
       pip install git+https://github.com/d2l-ai/d2l-book
