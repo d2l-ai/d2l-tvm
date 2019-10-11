@@ -87,4 +87,6 @@ import timeit
 import numpy as np
 from matplotlib import pyplot as plt
 from IPython import display
+from mxnet import np as mp, npx as mpx
+mpx.set_np()
 ```

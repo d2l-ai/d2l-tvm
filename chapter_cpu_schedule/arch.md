@@ -8,11 +8,11 @@ In this section, we will do a brief introduction of CPU components that are impo
 
 CPU have hardware units to perform arithmetics on integers (called [ALU](https://en.wikipedia.org/wiki/Arithmetic_logic_unit)) and floating-points (called [FPU](https://en.wikipedia.org/wiki/Floating-point_arithmetic)). The performance of various data types depends on the hardware. Let's first check the CPU model we are using.
 
-```{.python .input  n=13}
+```{.python .input  n=1}
 !cat /proc/cpuinfo | grep "model name" | head -n1
 ```
 
-Now check the performance of a matrix product under different data types.
+Now check the performance of a matrix multiplication under different data types.
 
 ```{.python .input  n=6}
 import numpy as np
@@ -29,7 +29,7 @@ benchmark('int64')
 
 As can be seen, 32-bit floating-point (float32) is 2x faster than 64-bit floating-point (float64). The integer performance is way more slower. We will get back to the understand more about these numbers later.
 
-Other operators, however, could be significantly slower than the multiplication and addition `a += b * c` used in matrix product. For example, CPU may need hundreds of circles to computing `exp`. You can see that even 1000 times less operators is needed for `np.exp(x)` than `np.dot(x, x)`. The former takes longer time.
+Other operators, however, could be significantly slower than the multiplication and addition `a += b * c` used in matrix multiplication. For example, CPU may need hundreds of circles to computing `exp`. You can see that even 1000 times less operators is needed for `np.exp(x)` than `np.dot(x, x)`. The former takes longer time.
 
 ```{.python .input  n=14}
 x = np.random.normal(size=(1000, 1000)).astype('float32')
@@ -54,7 +54,6 @@ we can see that it also has a max 3 GHz clock rate, but it might be 100x faster 
 Single instruction, multiple data ([SIMD](https://en.wikipedia.org/wiki/SIMD)), refers to process multiple elements with a single instruction simultaneously. :numref:`fig_cpu_parallel_arch` illustrates this architecture. In a normal CPU core, there is an instruction fetching and decoding unit. It runs an instruction on the arithmetic unit (AU), e.g. ALU or FPU, to process one element, e.g. float32, each time. With SIMD, we have multiple AUs instead of one. In each time, the fetch-and-decode unit runs an instruction on every AU simultaneously. If there are $n$ AUs, then we can process $n$ element each time.
 
 Popular SIMD instruction sets include Intel's [SSE](https://en.wikipedia.org/wiki/Streaming_SIMD_Extensions) and [AVX](https://en.wikipedia.org/wiki/Advanced_Vector_Extensions), ARM's [Neon](https://en.wikipedia.org/wiki/ARM_architecture#Advanced_SIMD_(NEON)) and AMD's [3DNow!](https://en.wikipedia.org/wiki/3DNow!). Let's check which sets our CPU supports.
-
 
 ```{.python .input}
 !cat /proc/cpuinfo | grep "flags" | head -n1
@@ -86,7 +85,7 @@ For the CPU we are using, the max clock rate is $3\times 10^9$, it has 16 physic
 
 You can modify the above code based on your system information to calculate your CPU peak performance.
 
-Matrix product is a good benchmark workload for the peak performance. As can be seen, the measure GFLOPS is very close to the peak performance.
+Matrix multiplication is a good benchmark workload for the peak performance. As can be seen, the measure GFLOPS is very close to the peak performance.
 
 ```{.python .input}
 x = np.random.normal(size=(1000, 1000)).astype('float32')

@@ -9,4 +9,6 @@ call_overhead
 vector_add
 matmul
 block_matmul
+basic_conv
+conv
 ```

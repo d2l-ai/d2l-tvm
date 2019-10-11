@@ -12,6 +12,8 @@ import timeit
 import numpy as np
 from matplotlib import pyplot as plt
 from IPython import display
+from mxnet import np as mp, npx as mpx
+mpx.set_np()
 
 
 # Defined in file: ./chapter_expression/vector_add.md
@@ -105,5 +107,73 @@ def plot_gflops(sizes, gflops, legend):
              xscale='log', yscale='log', 
              legend=legend, fmts=['--']*(len(gflops)-1)+['-'])
     
+
+
+# Defined in file: ./chapter_cpu_schedule/basic_conv.md
+def conv_out_size(n, k, p, s):
+    """Compute the output size by given input size n, 
+    kernel size k, padding p, and stride s"""
+    return (n - k + 2 * p)//s + 1
+
+
+# Defined in file: ./chapter_cpu_schedule/basic_conv.md
+def conv_gflop(oc, ic, n, k, p, s):
+    """Compute the #floating points in a convolution by given
+    output channels oc, input channels ic, input size n, kernela size k, 
+    padding p and stride s
+    """
+    on = conv_out_size(n, k, p, s)
+    return 2 * oc * ic * on * on * k * k / 1e9
+
+
+# Defined in file: ./chapter_cpu_schedule/basic_conv.md
+def get_data(shape, func, target=tvm.cpu()):
+    if func.__name__ in ('normal', 'uniform'):
+        data = func(size=shape)
+    else:
+        data = func(shape=shape)
+    if hasattr(data, 'asnumpy'):
+        data = data.asnumpy()
+    return tvm.nd.array(data.astype('float32'), target)
+
+
+# Defined in file: ./chapter_cpu_schedule/basic_conv.md
+def get_conv_data_mxnet(oc, ic, n, k, p, s):
+    mpx.random.seed(0)
+    data = mp.random.normal(size=(1, ic, n, n))
+    weight = mp.random.normal(size=(oc, ic, k, k))
+    bias = mp.zeros((oc,))
+    on = conv_out_size(n, k, p, s)
+    out = mp.empty((1, oc, on, on))
+    # Wait data are generated to make later benchmarking accurate
+    mpx.waitall()  
+    return data, weight, bias, out
+
+
+# Defined in file: ./chapter_cpu_schedule/basic_conv.md
+def benchmark_mod_tvm(mod, args, target):
+    # Estimate the #repeat to run for 1 second, with at least 5 runs
+    start = time.time()
+    mod(*args)
+    nrepeat = int(max(1.0/(time.time() - start), 5))
+    ctx = tvm.context(target, 0)
+    timer = mod.time_evaluator(mod.entry_name, ctx=ctx, number=nrepeat)
+    return timer(*args).mean
+
+
+# Defined in file: ./chapter_cpu_schedule/basic_conv.md
+def benchmark_conv_mxnet(oc, ic, n, k, p, s):
+    timer = timeit.Timer(
+        setup='import d2ltvm\n'
+        'from mxnet import npx\n'
+        'oc, ic, n, k, p, s = %d, %d, %d, %d, %d, %d\n'
+        'data, weight, bias, out = d2ltvm.get_conv_data_mxnet(\n'
+        '    oc, ic, n, k, p, s)'%(oc, ic, n, k, p, s),
+        stmt='npx.convolution(data, weight, bias, kernel=(k,k), pad=(p,p),\n' 
+        '    stride=(s,s), num_filter=oc, out=out); out.wait_to_read()\n')
+    # Estimate the #repeat to run for 1 second, with at least 5 runs
+    nrepeat = max(int(1.0/timer.timeit(1)), 3)
+    time = timer.timeit(nrepeat)
+    return conv_gflop(oc, ic, n, k, p, s) / time  * nrepeat
 
 

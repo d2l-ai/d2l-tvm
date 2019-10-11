@@ -3,7 +3,7 @@
 
 We mentioned in :numref:`ch_cpu_arch` that matrix multiplication is a widely used performance benchmark workload, and the NumPy `dot` operator nearly reaches the peak performance of the Xeon E5-2686 v4 CPU. In this chapter, we will investigate multiple scheduling strategies for this operator.
 
-```{.python .input  n=2}
+```{.python .input  n=1}
 %matplotlib inline
 import tvm
 import numpy as np
@@ -14,7 +14,7 @@ import time
 
 We first define benchmark functions to measure the GFLOPS. To simplify the measurement, we only consider square matrices. Extending to non-square cases is straightforward. Then let's reproduce the matrix multiplication result in :numref:`ch_cpu_arch`.
 
-```{.python .input  n=28}
+```{.python .input  n=3}
 # Save to the d2ltvm package.
 def benchmark_square_matmul_np(n):
     timer = timeit.Timer(
@@ -35,9 +35,13 @@ benchmark_square_matmul_np(1024)
 
 Next we define a function to benchmark multiple input shapes.
 
-```{.python .input  n=21}
+```{.python .input  n=4}
 sizes = 2**np.arange(5, 12, 1)
 np_gflops = [benchmark_square_matmul_np(n) for n in sizes]
+```
+
+```{.python .input}
+np_gflops
 ```
 
 ## Default Schedule
@@ -53,7 +57,7 @@ The elements assessed to compute $C_{i,j}$ are illustrated in :numref:`fig_matmu
 
 The following function returns the computing expression of matrix multiplication.
 
-```{.python .input  n=4}
+```{.python .input  n=5}
 # Save to the d2ltvm package.
 def square_matmul_default(n):
     """Return the computing expression of square matrix multiplication with
@@ -71,7 +75,7 @@ Now let's check the performance of the default schedule. Note that an operator h
 
 The following function returns a function that can be used by `benchmark`.
 
-```{.python .input  n=22}
+```{.python .input  n=6}
 # Save to the d2ltvm package.
 def benchmark_square_matmul_tvm(n, generator, target='llvm -mcpu=core-avx2'):
     # Compile
@@ -90,7 +94,7 @@ def benchmark_square_matmul_tvm(n, generator, target='llvm -mcpu=core-avx2'):
     timer = mod.time_evaluator(mod.entry_name, ctx=ctx, number=nrepeat)
     return 2 * n**3 / timer(x, y, z).mean / 1e9
 
-default_gflops = [benchmark_square_matmul_tvm(n, square_matmul_default) for n in sizes]
+#default_gflops = [benchmark_square_matmul_tvm(n, square_matmul_default) for n in sizes]
 ```
 
 The default schedule follows the computation illustrated in :numref:`fig_matmul_default`.
@@ -103,7 +107,7 @@ def plot_gflops(sizes, gflops, legend):
              xscale='log', yscale='log', 
              legend=legend, fmts=['--']*(len(gflops)-1)+['-'])
     
-plot_gflops(sizes, [np_gflops, default_gflops], ['numpy', 'default'])
+#plot_gflops(sizes, [np_gflops, default_gflops], ['numpy', 'default'])
 ```
 
 ## Reordering Axes
@@ -134,7 +138,7 @@ We can see that the reordering significantly improves the performance compared t
 
 In the outermost for-loop, each time we compute the results of a row in $C$. Each row can be computed in parallel, so we can make the schedule be parallelized on axis `x`. As discussed in :numref:`ch_cpu_arch`, despite our OS claims there are 32 threads, our CPU only has 16 cores.
 
-```{.python .input  n=10}
+```{.python .input  n=9}
 import os 
 os.environ["TVM_NUM_THREADS"] = '16'
 
@@ -147,7 +151,7 @@ def parallel(n):
     
 parallel_gflops = [benchmark_square_matmul_tvm(n, parallel) for n in sizes]
 
-plot_gflops(sizes, [np_gflops, default_gflops, reorder_gflops, parallel_gflops], 
+plot_gflops(sizes, [np_gflops,  parallel_gflops], 
             ['numpy', 'default', 'reorder', '+parallel'])
 ```
 

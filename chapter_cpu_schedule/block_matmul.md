@@ -1,7 +1,7 @@
 # Improve Cache Efficiency by Blocking
+:label:`ch_block_matmul_cpu`
 
-In :label:`ch_matmul_cpu` we saw that properly reordering the memory access pattern with parallelization could dramatically improve the performance for small-scale matrix multiplication. However, for large matrices, we need to carefully consider the cache hierarchy discussed in :label:`ch_cpu_arch`. 
-
+In :numref:`ch_matmul_cpu` we saw that properly reordering the memory access pattern with parallelization could dramatically improve the performance for small-scale matrix multiplication. However, for large matrices, we need to carefully consider the cache hierarchy discussed in :numref:`ch_cpu_arch`.
 
 ```{.python .input}
 %matplotlib inline
@@ -10,7 +10,7 @@ import numpy as np
 import d2ltvm 
 ```
 
-Before we started, let's rerun the benchmark for NumPy as our baseline. 
+Before we started, let's rerun the benchmark for NumPy as our baseline.
 
 ```{.python .input}
 sizes = 2**np.arange(5, 12, 1)
@@ -35,7 +35,7 @@ This computation is also illustrate in :numref:`fig_matmul_block`.
 
 In each submatrix computation, we need to write a `(tx, ty)` shape matrix, and reach two matrices with shapes `(tx, tk)` and `(tk, ty)`. We can compute such a computation in a single CPU core. If we properly choose the tiling sizes `tx`, `ty` and `tk` to fit into the L1 cache, which is 32KB for our CPU (refer to :label:`ch_cpu_arch`). The reduced cache miss then should improve the performance. 
 
-Let's implement this idea. In the following codes, we choose `tx=ty=32` so that the submatrix to write has a size of `32*32*4=4KB`. The total size of the two submatrices to read is `2*32*4*4=1KB`. All of them can fit into our L1 cache easily. The tiling is implemented by the `split` method. After properly reordered the axes, we hint the compiler to use SIMD for the innermost axis, and unroll the second innermost axis. As before we parallelize the outermost axis.  
+Let's implement this idea. In the following codes, we choose `tx=ty=32` so that the submatrix to write has a size of `32*32*4=4KB`. The total size of the two submatrices to read is `2*32*4*4=1KB`. All of them can fit into our L1 cache easily. The tiling is implemented by the `split` method. After properly reordered the axes, we hint the compiler to use SIMD for the innermost axis, and unroll the second innermost axis. As before we parallelize the outermost axis.
 
 ```{.python .input}
 tx, ty, tk = 32, 32, 4  # tile sizes
@@ -55,7 +55,7 @@ s, (A, B, C) = block(64)
 print(tvm.lower(s, [A, B, C], simple_mode=True))
 ```
 
-From the generated C-like codes, we can see that `parallel` is placed on the `x.outer`, i.e. `xo`, axis. The vectorization translated the axis `yi`, whose length is 32, into `ramp` with a stride 1 and width 32. Besides, the axis `ki` is also replaced by 4 length sequential sequence to reduce the cost of the for-loop. 
+From the generated C-like codes, we can see that `parallel` is placed on the `x.outer`, i.e. `xo`, axis. The vectorization translated the axis `yi`, whose length is 32, into `ramp` with a stride 1 and width 32. Besides, the axis `ki` is also replaced by 4 length sequential sequence to reduce the cost of the for-loop.
 
 ```{.python .input}
 blocked_gflops = [d2ltvm.benchmark_square_matmul_tvm(n, block) for n in sizes]
@@ -67,7 +67,7 @@ The benchmark results show that our program is as good as NumPy for small matric
 
 ## Write Cache
 
-The non-sequential write issue is larger than the non-sequential read. This is because we read once of each submatrix of `A` and `B`, but need to write by `n` times for the submatrix of `C`. In the following codes, we first write the results into a local cache for each submatrix computation, and then write them back to `C`. It can be done by the `cache_write` method. We specify the cache is used for each block by placing it within the `yo` axis by `compute_at`. The rest optimization is same as before, but note that we need to use `s[CC]` instead of `s[C]` to optimize the submatrix computation. 
+The non-sequential write issue is larger than the non-sequential read. This is because we read once of each submatrix of `A` and `B`, but need to write by `n` times for the submatrix of `C`. In the following codes, we first write the results into a local cache for each submatrix computation, and then write them back to `C`. It can be done by the `cache_write` method. We specify the cache is used for each block by placing it within the `yo` axis by `compute_at`. The rest optimization is same as before, but note that we need to use `s[CC]` instead of `s[C]` to optimize the submatrix computation.
 
 ```{.python .input}
 def cached_block(n):
@@ -91,7 +91,7 @@ s, (A, B, C) = cached_block(512)
 print(tvm.lower(s, [A, B, C], simple_mode=True))
 ```
 
-Note from the generated codes that we initialize `C.local` within the `yo` axis, and the size of `C.local` is `tx * ty = 1024`. 
+Note from the generated codes that we initialize `C.local` within the `yo` axis, and the size of `C.local` is `tx * ty = 1024`.
 
 ```{.python .input}
 cached_gflops = [
@@ -112,4 +112,4 @@ We can see the the write cache improves the performance for large matrices.
 1. Try different hyperparameters for `tx`, `ty` and `tx`.
 1. Try different axis orders.
 1. Benchmark on larger matrices, observe if there is still performance gap between NumPy. If so, explain it.
-1. Evaluate the correctness of the computed results 
+1. Evaluate the correctness of the computed results
