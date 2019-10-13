@@ -30,6 +30,20 @@ def eval_mod(mod, *inputs, out):
         np.copyto(out, tvm_args[-1].asnumpy())
 
 
+# Defined in file: ./chapter_cpu_schedule/call_overhead.md
+def bench_workload(workload):
+    """Benchmarka a workload
+    
+    workload - must accept a num_repeat argument and return the total runtime
+    """
+    workload(1)  # warmup
+    time = workload(1)  # the time to run once
+    if time > 1: return time
+    # The number of repeats to measure at least 1 second.
+    num_repeats = max(int(1.0 / time), 5)
+    return workload(num_repeats) / num_repeats
+
+
 # Defined in file: ./chapter_cpu_schedule/vector_add.md
 def plot(X, Y, xlabel=None, ylabel=None, legend=[], xlim=None,
          ylim=None, xscale='linear', yscale='linear', fmts=None,
