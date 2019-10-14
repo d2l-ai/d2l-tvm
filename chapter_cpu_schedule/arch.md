@@ -77,7 +77,7 @@ We often use floating point operations per second ([FLOP](https://en.wikipedia.o
 
 `clock_rate * #physical_cores * #instructions_per_clock * #operators_per_instruction`
 
-For the CPU we are using, the max clock rate is $3\times 10^9$, it has 16 physical cores, the AVX2 computes 8 float32 instructions per second, the [FMA](https://en.wikipedia.org/wiki/FMA_instruction_set) instruction set in AVX2 compute `a += b * c` each time, which contains 2 operations. Therefore, the GFLOPS (gigaFLOPS) for single precision (float32) is
+For the CPU we are using, the max clock rate is $3\times 10^9$, it has 16 physical cores, the AVX2 computes 8 float32 instructions per clock, the [FMA](https://en.wikipedia.org/wiki/FMA_instruction_set) instruction set in AVX2 compute `a += b * c` each time, which contains 2 operations. Therefore, the GFLOPS (gigaFLOPS) for single precision (float32) is
 
 ```{.python .input}
 3 * 16 * 8 * 2
