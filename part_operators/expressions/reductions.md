@@ -1,6 +1,6 @@
 # Reduction Operations
 
-Reduction operators often reduce the size of the input tensor, such as `np.sum`. Such operators are often straightforward to implement with for-loops. But it's a little bit more complicated in TVM since we cannot use a Python for-loop directly. In this section, we will describe how to implement these reduction operators. 
+Reduction operators often reduce the size of the input tensor, such as `np.sum`. Such operators are often straightforward to implement with for-loops. But it's a little bit more complicated in TVM since we cannot use a Python for-loop directly. In this section, we will describe how to implement these reduction operators.
 
 ```{.python .input}
 import d2ltvm
@@ -69,7 +69,7 @@ Let's also verify the results.
 mod = tvm.build(s, [A, B])
 c = tvm.nd.array(np.empty((), dtype='float32'))
 mod(tvm.nd.array(a), c)
-np.testing.assert_equal(a.sum(), c.asnumpy())
+np.testing.assert_allclose(a.sum(), c.asnumpy())
 ```
 
 Beyond `tvm.sum`, there are other reduction operators such as `tvm.min` and `tvm.max`. We can also implement customized reduction operators as well.
@@ -117,7 +117,7 @@ Again, let's verify the results.
 mod = tvm.build(s, [A, B])
 b = tvm.nd.array(np.empty((3,), dtype='float32'))
 mod(tvm.nd.array(a), b)
-np.testing.assert_equal(a.prod(axis=1), b.asnumpy())
+np.testing.assert_allclose(a.prod(axis=1), b.asnumpy())
 ```
 
 ## Summary
