@@ -1,5 +1,5 @@
 # Schedules to Optimize GPU Performance
-:label:`ch_schedule`
+:label:`ch_gpu_schedules`
 
 
 ```toc

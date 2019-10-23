@@ -1,11 +1,12 @@
 # Vector Addition
 :label:`ch_vector_add`
 
-Let's begin with a simple example: summing two vectors. It's straightforward in NumPy.
+Now you have installed all libraries, let's write our first program: summing two vectors `a` and `b`. It's straightforward in NumPy, we can do it by `c = a + b`.
 
 ```{.python .input  n=2}
 import numpy as np
 
+np.random.seed(0)
 n = 100
 a = np.random.normal(size=n).astype(np.float32)
 b = np.random.normal(size=n).astype(np.float32)
@@ -26,6 +27,24 @@ vector_add(a, b, d)
 np.testing.assert_array_equal(c, d)
 ```
 
+Given we will frequently create two random ndarrays and another empty one to store the results in the following chapters, we save this routine to reuse it in the future.
+
+```{.python .input}
+# Save to the d2ltvm package.
+def get_abc(shape, constructor=None):
+    """Return random a, b and empty c with the same shape.  
+    """
+    np.random.seed(0) 
+    a = np.random.normal(size=shape).astype(np.float32)
+    b = np.random.normal(size=shape).astype(np.float32)
+    c = np.empty_like(a)
+    if constructor is not None:
+        a, b, c = [constructor(x) for x in (a, b, c)]
+    return a, b, c
+```
+
+Note that we fixed the random seed so that we will always get the same results to simplify the comparison between NumPy, TVM and others. In addition, it accepts an optional `constructor` to  convert the data into a different format. 
+
 ## Define the Computation
 :label:`def_com`
 
@@ -41,10 +60,15 @@ Next we define how the output `C` is computed by `tvm.compute`. It accepts two a
 ```{.python .input  n=6}
 import tvm
 
-A = tvm.placeholder((n,), name='a')
-B = tvm.placeholder((n,), name='b')
-C = tvm.compute(A.shape, lambda i: A[i] + B[i], name='c')
+# Save to the d2ltvm package.
+def vector_add(n):
+    """TVM expression for vector addition"""
+    A = tvm.placeholder((n,), name='a')
+    B = tvm.placeholder((n,), name='b')
+    C = tvm.compute(A.shape, lambda i: A[i] + B[i], name='c')
+    return A, B, C
 
+A, B, C = vector_add(n)
 type(C)
 ```
 
@@ -82,29 +106,17 @@ y = tvm.nd.array(x)
 type(y), y.asnumpy()
 ```
 
-We define a convenient function to evaluate a module by automatically converting NumPy ndarrays arguments into TVM ndarrays, and then return results in NumPy formats. This function is saved in the `d2ltvm` package so we can reuse it later.
-
-```{.python .input  n=82}
-# Save to the d2ltvm package.
-def eval_mod(mod, *inputs, out):
-    """Evaluate a TVM module, and save results in out.
-    """
-    # Convert all numpy arrays to tvm arrays
-    tvm_args = [tvm.nd.array(x) if isinstance(x, np.ndarray) 
-                else x for x in inputs + (out,)]
-    mod(*tvm_args)
-    # If out is a tvm array, then its value has already been inplaced. 
-    # Otherwise, explicitly copy the results. 
-    if isinstance(out, np.ndarray):
-        np.copyto(out, tvm_args[-1].asnumpy())
-```
-
-Now evaluate and check the results.
+Now let's construct the same `a` and `b`, but returns them as TVM ndarrays.
 
 ```{.python .input}
-c = np.empty(shape=n, dtype=np.float32)
-eval_mod(tvm_vector_add, a, b, out=c)
-np.testing.assert_array_equal(c, d)
+a, b, d = get_abc(100, tvm.nd.array)
+```
+
+Do the computation with `tvm_vector_add`, the result `d` should be equal to `c` that is computed through NumPy.
+
+```{.python .input}
+tvm_vector_add(a, b, d)
+np.testing.assert_array_equal(c, d.asnumpy())
 ```
 
 ## Argument Constraints
@@ -119,13 +131,13 @@ TVM will check if the input shapes satisfy this specification.
 
 ```{.python .input  n=81}
 try:
-    a, b, c = (np.ones(101, dtype='float32') for _ in range(3))
-    c, = eval_mod(tvm_vector_add, a, b, out=c)
+    a, b, c = get_abc(200, tvm.nd.array)
+    tvm_vector_add(a, b, c)
 except tvm.TVMError as e:
     print(e)
 ```
 
-The default data type in TVM in `float32`.
+The default data type in TVM is `float32`.
 
 ```{.python .input}
 A.dtype, B.dtype, C.dtype
@@ -135,8 +147,9 @@ An error will appear if input with a different data type.
 
 ```{.python .input}
 try:
-    a, b, c = (np.ones(100, dtype='int32') for _ in range(3))
-    eval_mod(tvm_vector_add, a, b, out=c)
+    a, b, c = get_abc(100, tvm.nd.array)
+    a = tvm.nd.array(a.asnumpy().astype('float64'))
+    tvm_vector_add(a, b, c)
 except tvm.TVMError as e:
     print(e)
 ```

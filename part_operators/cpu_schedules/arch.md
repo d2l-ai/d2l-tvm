@@ -117,7 +117,7 @@ As can be seen, there are three levels of caches: L1, L2 and L3. The L1 cache ha
 the L1 cache has a 1 ns latency, the L2 cache's latency is around 3 ns, and the L3 cache is slower, with a latency about 20 ns, while still faster than the main memory's 100 ns latency.
 
 
-![The layout of main memory and caches.](../img/cpu_memory.svg)
+![The layout of main memory and caches.](../../img/cpu_memory.svg)
 :label:`fig_cpu_memory`
 
 A brief memory subsystem layout is illustrated in :numref:`fig_cpu_memory`.

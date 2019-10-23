@@ -1,16 +1,18 @@
 # Reduction Operations
 
-In this section, we will explore the reducing operators.
+Reduction operators often reduce the size of the input tensor, such as `np.sum`. Such operators are often straightforward to implement with for-loops. But it's a little bit more complicated in TVM since we cannot use a Python for-loop directly. In this section, we will describe how to implement these reduction operators. 
+
+```{.python .input}
+import d2ltvm
+import numpy as np
+import tvm
+```
 
 ## Sum
 
 Let's start with summing the rows. In NumPy, we can do it with the `sum` method.
 
 ```{.python .input  n=29}
-import d2ltvm as d2l
-import numpy as np
-import tvm
-
 a = np.random.normal(size=(3,4)).astype('float32')
 a.sum(axis=1)
 ```
@@ -47,9 +49,9 @@ Now test the results are as expected.
 
 ```{.python .input  n=5}
 mod = tvm.build(s, [A, B])
-c = np.empty((3,), dtype='float32')
-d2l.eval_mod(mod, a, out=c)
-np.testing.assert_equal(b, c)
+c = tvm.nd.array(np.empty((3,), dtype='float32'))
+mod(tvm.nd.array(a), c)
+np.testing.assert_equal(b, c.asnumpy())
 ```
 
 We know that `a.sum()` will sum all elements in `a` and returns a scalar. Let's also implement in TVM. To do it, we need another reduction axis along the first dimension, which size is `n`. The result is a scalar, namely a 0-rank tensor, can be created with an empty shape tuple.
@@ -65,9 +67,9 @@ Let's also verify the results.
 
 ```{.python .input  n=17}
 mod = tvm.build(s, [A, B])
-c = np.empty((), dtype='float32')
-d2l.eval_mod(mod, a, out=c)
-np.testing.assert_equal(a.sum(), c)
+c = tvm.nd.array(np.empty((), dtype='float32'))
+mod(tvm.nd.array(a), c)
+np.testing.assert_equal(a.sum(), c.asnumpy())
 ```
 
 Beyond `tvm.sum`, there are other reduction operators such as `tvm.min` and `tvm.max`. We can also implement customized reduction operators as well.
@@ -113,9 +115,9 @@ Again, let's verify the results.
 
 ```{.python .input  n=28}
 mod = tvm.build(s, [A, B])
-b = np.empty((3,), dtype='float32')
-d2l.eval_mod(mod, a, out=b)
-np.testing.assert_equal(a.prod(axis=1), b)
+b = tvm.nd.array(np.empty((3,), dtype='float32'))
+mod(tvm.nd.array(a), b)
+np.testing.assert_equal(a.prod(axis=1), b.asnumpy())
 ```
 
 ## Summary

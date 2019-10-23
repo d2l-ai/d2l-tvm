@@ -5,32 +5,135 @@
 import sys
 d2ltvm = sys.modules[__name__]
 
-# Defined in file: ./chapter_install/install.md
+# Defined in file: ./part_getting_started/install.md
 import tvm
 import time
 import timeit
 import numpy as np
 from matplotlib import pyplot as plt
 from IPython import display
-from mxnet import np as mp, npx as mpx
-mpx.set_np()
+import mxnet as mx
 
 
-# Defined in file: ./chapter_expression/vector_add.md
-def eval_mod(mod, *inputs, out):
-    """Evaluate a TVM module, and save results in out.
+# Defined in file: ./part_getting_started/vector_add.md
+def get_abc(shape, constructor=None):
+    """Return random a, b and empty c with the same shape.  
     """
-    # Convert all numpy arrays to tvm arrays
-    tvm_args = [tvm.nd.array(x) if isinstance(x, np.ndarray) 
-                else x for x in inputs + (out,)]
-    mod(*tvm_args)
-    # If out is a tvm array, then its value has already been inplaced. 
-    # Otherwise, explicitly copy the results. 
-    if isinstance(out, np.ndarray):
-        np.copyto(out, tvm_args[-1].asnumpy())
+    np.random.seed(0) 
+    a = np.random.normal(size=shape).astype(np.float32)
+    b = np.random.normal(size=shape).astype(np.float32)
+    c = np.empty_like(a)
+    if constructor is not None:
+        a, b, c = [constructor(x) for x in (a, b, c)]
+    return a, b, c
 
 
-# Defined in file: ./chapter_cpu_schedule/call_overhead.md
+# Defined in file: ./part_getting_started/vector_add.md
+def vector_add(n):
+    """TVM expression for vector addition"""
+    A = tvm.placeholder((n,), name='a')
+    B = tvm.placeholder((n,), name='b')
+    C = tvm.compute(A.shape, lambda i: A[i] + B[i], name='c')
+    return A, B, C
+
+
+# Defined in file: ./part_operators/common_operators/matmul.md
+def matmul(n, m, l):
+    """Return the computing expression of matrix multiplication
+    A : n x l matrix
+    B : l x m matrix
+    C : n x m matrix with C = A B
+    """
+    k = tvm.reduce_axis((0, l), name='k')
+    A = tvm.placeholder((n, l), name='A')
+    B = tvm.placeholder((l, m), name='B')
+    C = tvm.compute((n, m), 
+                    lambda x, y: tvm.sum(A[x, k] * B[k, y], axis=k),
+                    name='C')
+    return A, B, C
+
+
+# Defined in file: ./part_operators/common_operators/conv.md
+def padding(X, ph, pw):
+    """Pad X with 0s
+    
+    ph, pw : height and width padding
+    """
+    assert len(X.shape) >= 2
+    nh, nw = X.shape[-2], X.shape[-1]
+    return tvm.compute( 
+            (*X.shape[0:-2], nh+ph*2, nw+pw*2), 
+            lambda *i: tvm.if_then_else(
+                tvm.any(i[-2]<ph, i[-2]>=nh+ph, i[-1]<pw, i[-1]>=nw+pw), 
+                0, X[i[:-2]+(i[-2]-ph, i[-1]-pw)]),
+            name='PaddedX')
+
+
+# Defined in file: ./part_operators/common_operators/conv.md
+def conv_out_size(n, k, p, s):
+    """Compute the output size by given input size n, 
+    kernel size k, padding p, and stride s"""
+    return (n - k + 2 * p)//s + 1
+
+
+# Defined in file: ./part_operators/common_operators/conv.md
+def conv(oc, ic, nh, nw, kh, kw, ph=0, pw=0, sh=1, sw=1):
+    """Convolution
+    
+    oc, ic : output and input channels.
+    nh, nw : input width and height
+    kh, kw : kernel width and height
+    ph, pw : height and width padding
+    sh, sw : height and width strides
+    """
+    # reduction axes
+    ric = tvm.reduce_axis((0, ic), name='ric')
+    rkh = tvm.reduce_axis((0, kh), name='rkh')
+    rkw = tvm.reduce_axis((0, kw), name='rkw')
+    # output height and weights
+    oh = conv_out_size(nh, kh, ph, sh)
+    ow = conv_out_size(nw, kw, pw, sw)
+    # pad X and then compute Y
+    X = tvm.placeholder((ic, nh, nw), name='X')
+    K = tvm.placeholder((oc, ic, kh, kw), name='K')
+    PaddedX = padding(X, ph, pw) if ph * pw != 0 else X
+    Y = tvm.compute(
+        (oc, oh, ow),
+        lambda c, i, j: tvm.sum(
+            PaddedX[ric, i*sh+rkh, j*sw+rkw] * K[c, ric, rkh, rkw], 
+            axis=[ric, rkh, rkw]), name='Y')
+    return X, K, Y, PaddedX
+
+
+# Defined in file: ./part_operators/common_operators/conv.md
+def get_conv_data(oc, ic, n, k, p=0, s=1, generator=None):
+    np.random.seed(0)
+    data = np.random.normal(size=(ic, n, n)).astype('float32')
+    weight = np.random.normal(size=(oc, ic, k, k)).astype('float32')
+    on = conv_out_size(n, k, p, s)
+    out = np.empty((oc, on, on), dtype='float32')
+    if generator:
+        data, weight, out = (generator(x) for x in [data, weight, out])
+    return data, weight, out
+
+
+# Defined in file: ./part_operators/common_operators/conv.md
+def get_conv_data_mxnet(oc, ic, n, k, p, s, ctx=mx.cpu()):
+    data, weight, out = get_conv_data(oc, ic, n, k, p, s, 
+                                      lambda x: mx.nd.array(x, ctx=ctx))
+    data, out = data.expand_dims(axis=0), out.expand_dims(axis=0)
+    bias = mx.nd.zeros(out.shape[1], ctx=ctx)
+    return data, weight, bias, out
+
+
+# Defined in file: ./part_operators/common_operators/conv.md
+def conv_mxnet(data, weight, bias, out, k, p, s):
+    mx.nd.Convolution(data, weight, bias, kernel=(k,k), stride=(s,s), 
+                      pad=(p,p), num_filter=out.shape[1], out=out)
+    
+
+
+# Defined in file: ./part_operators/cpu_schedules/call_overhead.md
 def bench_workload(workload):
     """Benchmarka a workload
     
@@ -44,7 +147,7 @@ def bench_workload(workload):
     return workload(num_repeats) / num_repeats
 
 
-# Defined in file: ./chapter_cpu_schedule/vector_add.md
+# Defined in file: ./part_operators/cpu_schedules/vector_add.md
 def plot(X, Y, xlabel=None, ylabel=None, legend=[], xlim=None,
          ylim=None, xscale='linear', yscale='linear', fmts=None,
          figsize=(6, 4)):
@@ -65,129 +168,108 @@ def plot(X, Y, xlabel=None, ylabel=None, legend=[], xlim=None,
     axes.set_ylim(ylim)
     if legend: axes.legend(legend)
     axes.grid()
+    
 
 
-# Defined in file: ./chapter_cpu_schedule/matmul.md
-def benchmark_square_matmul_np(n):
-    timer = timeit.Timer(
-        setup='import numpy as np\n'
-        'n = ' + str(n) + '\n'
-        'x = np.random.normal(size=(n, n)).astype(np.float32)\n'
-        'y = np.random.normal(size=(n, n)).astype(np.float32)\n'
-        'z = np.empty_like(x)\n',
-        stmt = 'np.dot(x, y, out=z);')
-    # Estimate the #repeat to run for 1 second
-    time = timer.timeit(1)
-    nrepeat = max(int(1.0/time), 5) 
-    time = timer.timeit(nrepeat) 
-    return 2 * n**3 / time / 1e9 * nrepeat
-
-
-# Defined in file: ./chapter_cpu_schedule/matmul.md
-def square_matmul_default(n):
-    """Return the computing expression of square matrix multiplication with
-    the default schedule.
-    """
-    k = tvm.reduce_axis((0, n), name='k')
-    A = tvm.placeholder((n, n), name='A')
-    B = tvm.placeholder((n, n), name='B')
-    C = tvm.compute(
-        (n, n), lambda x, y: tvm.sum(A[x, k] * B[k, y], axis=k), name='C')
-    return tvm.create_schedule(C.op), (A, B, C)
-
-
-# Defined in file: ./chapter_cpu_schedule/matmul.md
-def benchmark_square_matmul_tvm(n, generator, target='llvm -mcpu=core-avx2'):
-    # Compile
-    s, [A, B, C] = generator(int(n))
-    mod = tvm.build(s, [A, B, C], target=target)
-    # Prepare inputs and outputs
-    x = np.random.normal(size=(n, n)).astype(np.float32)
-    y = np.random.normal(size=(n, n)).astype(np.float32)
-    z = np.empty_like(x)
-    ctx = tvm.context(target, 0)
-    x, y, z = tvm.nd.array(x, ctx), tvm.nd.array(y, ctx), tvm.nd.array(z, ctx)
-    # Estimate the #runs to roughly benchmark for 1 second
-    start = time.time()
-    mod(x, y, z)
-    nrepeat = int(max(1.0/(time.time() - start), 1))
-    timer = mod.time_evaluator(mod.entry_name, ctx=ctx, number=nrepeat)
-    return 2 * n**3 / timer(x, y, z).mean / 1e9
-
-
-# Defined in file: ./chapter_cpu_schedule/matmul.md
+# Defined in file: ./part_operators/cpu_schedules/vector_add.md
 def plot_gflops(sizes, gflops, legend):
     d2ltvm.plot(sizes, gflops, xlabel='Size', ylabel='GFLOPS', 
              xscale='log', yscale='log', 
              legend=legend, fmts=['--']*(len(gflops)-1)+['-'])
-    
 
 
-# Defined in file: ./chapter_cpu_schedule/basic_conv.md
-def conv_out_size(n, k, p, s):
-    """Compute the output size by given input size n, 
-    kernel size k, padding p, and stride s"""
-    return (n - k + 2 * p)//s + 1
+# Defined in file: ./part_operators/cpu_schedules/vector_add.md
+def bench_vector_add_tvm(func, sizes, target):
+    def workload(nrepeats):
+        timer = mod.time_evaluator(mod.entry_name, ctx=ctx, number=nrepeats)
+        return timer(a, b, c).mean * nrepeats
+    times = []
+    for n in sizes:
+        s, (A, B, C) = func(int(n))
+        mod = tvm.build(s, [A, B, C], target)
+        ctx = tvm.context(target, 0)
+        a, b, c = d2ltvm.get_abc(n, lambda x: tvm.nd.array(x, ctx=ctx))
+        times.append(d2ltvm.bench_workload(workload))
+    return 2 * sizes / 1e9 / np.array(times)
 
 
-# Defined in file: ./chapter_cpu_schedule/basic_conv.md
+# Defined in file: ./part_operators/cpu_schedules/matmul.md
+def np_matmul_timer(n):
+    timer = timeit.Timer(setup='import numpy as np\n'
+                         'import d2ltvm\n'
+                         'a, b, c = d2ltvm.get_abc(%s)' % str((n,n)),
+                         stmt = 'np.dot(a, b, out=c)')
+    return timer.timeit
+
+
+# Defined in file: ./part_operators/cpu_schedules/matmul.md
+def bench_matmul_tvm(func, sizes, target):
+    def workload(nrepeats):
+        timer = mod.time_evaluator(mod.entry_name, ctx=ctx, number=nrepeats)
+        return timer(a, b, c).mean * nrepeats
+    times = []
+    for n in sizes:
+        s, (A, B, C) = func(int(n))
+        mod = tvm.build(s, [A, B, C], target)
+        ctx = tvm.context(target, 0)
+        a, b, c = d2ltvm.get_abc((n, n), lambda x: tvm.nd.array(x, ctx=ctx))
+        times.append(d2ltvm.bench_workload(workload))
+    return 2 * sizes**3 / 1e9 / np.array(times)
+
+
+# Defined in file: ./part_operators/cpu_schedules/conv.md
 def conv_gflop(oc, ic, n, k, p, s):
-    """Compute the #floating points in a convolution by given
-    output channels oc, input channels ic, input size n, kernela size k, 
-    padding p and stride s
+    """Compute the #floating points in a convolution.
+    
+    The arguments are output channels oc, input channels ic, input size n, 
+    kernel size k, padding p and stride s.
     """
-    on = conv_out_size(n, k, p, s)
+    on = d2ltvm.conv_out_size(n, k, p, s)
     return 2 * oc * ic * on * on * k * k / 1e9
 
 
-# Defined in file: ./chapter_cpu_schedule/basic_conv.md
-def get_data(shape, func, target=tvm.cpu()):
-    if func.__name__ in ('normal', 'uniform'):
-        data = func(size=shape)
-    else:
-        data = func(shape=shape)
-    if hasattr(data, 'asnumpy'):
-        data = data.asnumpy()
-    return tvm.nd.array(data.astype('float32'), target)
-
-
-# Defined in file: ./chapter_cpu_schedule/basic_conv.md
-def get_conv_data_mxnet(oc, ic, n, k, p, s):
-    mpx.random.seed(0)
-    data = mp.random.normal(size=(1, ic, n, n))
-    weight = mp.random.normal(size=(oc, ic, k, k))
-    bias = mp.zeros((oc,))
-    on = conv_out_size(n, k, p, s)
-    out = mp.empty((1, oc, on, on))
-    # Wait data are generated to make later benchmarking accurate
-    mpx.waitall()  
-    return data, weight, bias, out
-
-
-# Defined in file: ./chapter_cpu_schedule/basic_conv.md
-def benchmark_mod_tvm(mod, args, target):
-    # Estimate the #repeat to run for 1 second, with at least 5 runs
-    start = time.time()
-    mod(*args)
-    nrepeat = int(max(1.0/(time.time() - start), 5))
-    ctx = tvm.context(target, 0)
-    timer = mod.time_evaluator(mod.entry_name, ctx=ctx, number=nrepeat)
-    return timer(*args).mean
-
-
-# Defined in file: ./chapter_cpu_schedule/basic_conv.md
-def benchmark_conv_mxnet(oc, ic, n, k, p, s):
+# Defined in file: ./part_operators/cpu_schedules/conv.md
+def conv_timer_mxnet(c, n, k, ctx):
+    """Benchmark convolution in MXNet
+    
+    c : input, output channels
+    n : input width and height
+    k : kernel width and height
+    """
     timer = timeit.Timer(
         setup='import d2ltvm\n'
-        'from mxnet import npx\n'
-        'oc, ic, n, k, p, s = %d, %d, %d, %d, %d, %d\n'
+        'import mxnet as mx\n'
+        'c, n, k, p, s = %d, %d, %d, %d, 1\n'
         'data, weight, bias, out = d2ltvm.get_conv_data_mxnet(\n'
-        '    oc, ic, n, k, p, s)'%(oc, ic, n, k, p, s),
-        stmt='npx.convolution(data, weight, bias, kernel=(k,k), pad=(p,p),\n' 
-        '    stride=(s,s), num_filter=oc, out=out); out.wait_to_read()\n')
-    # Estimate the #repeat to run for 1 second, with at least 5 runs
-    nrepeat = max(int(1.0/timer.timeit(1)), 3)
-    time = timer.timeit(nrepeat)
-    return conv_gflop(oc, ic, n, k, p, s) / time  * nrepeat
+        '    c, c, n, k, p, s, mx.%s())'%(c, n, k, (k-1)//2, ctx),
+        stmt='d2ltvm.conv_mxnet(data, weight, bias, out, k, p, s);'
+        'out.wait_to_read()')
+    return timer.timeit
+
+
+# Defined in file: ./part_operators/cpu_schedules/conv.md
+def bench_conv_mxnet(sizes, ctx='cpu'):
+    """Return the GFLOPs of MXNet convolution"""
+    return [conv_gflop(c, c, n, k, (k-1)//2, 1) / 
+            d2ltvm.bench_workload(conv_timer_mxnet(c, n, k, ctx)) 
+            for c, n, k in sizes]
+
+
+# Defined in file: ./part_operators/cpu_schedules/conv.md
+def bench_conv_tvm(func, sizes, target):
+    def workload(nrepeats):
+        timer = mod.time_evaluator(mod.entry_name, ctx=ctx, number=nrepeats)
+        return timer(x, k, y).mean * nrepeats
+    gflops, times = [], []
+    for (c, n, k) in sizes:
+        args = c, c, n, k, (k-1)//2, 1 # oc, ic, n, k, p, s
+        s, (X, K, Y) = func(*args)
+        mod = tvm.build(s, [X, K, Y], target)
+        ctx = tvm.context(target, 0)        
+        x, k, y = d2ltvm.get_conv_data(
+            *args, lambda x: tvm.nd.array(x, ctx=ctx))
+        times.append(d2ltvm.bench_workload(workload))
+        gflops.append(conv_gflop(*args))
+    return np.array(gflops) / np.array(times)
 
 

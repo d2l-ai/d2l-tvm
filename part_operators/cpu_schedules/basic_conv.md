@@ -1,7 +1,7 @@
 # Basic Convolution
 :label:`ch_basic_conv_cpu`
 
-The convolution operator is the one of the most expensive, but also widely used, operators in neural networks. In this chapter, we will cover the operator with single input and output channels. Please refer to chapter [6.2](http://numpy.d2l.ai/chapter_convolutional-neural-networks/conv-layer.html) and [6.3](http://numpy.d2l.ai/chapter_convolutional-neural-networks/padding-and-strides.html) in D2L for more explanation about this operator.
+The convolution operator is the one of the most expensive but also widely used operators in neural networks. In this chapter, we will cover the operator with single input and output channels. Please refer to chapter [6.2](http://numpy.d2l.ai/chapter_convolutional-neural-networks/conv-layer.html) and [6.3](http://numpy.d2l.ai/chapter_convolutional-neural-networks/padding-and-strides.html) in D2L for more explanation about this operator.
 
 ```{.python .input  n=1}
 import tvm
@@ -39,7 +39,7 @@ def conv_out_size(n, k, p, s):
     return (n - k + 2 * p)//s + 1
 ```
 
-To compute an element in the output, we need $2k_hk_w$ floating-point operations. The following function returns the giga floating-point operations needed to compute an convolution, where both input matrix and kernel matrix are assumed to be square for simplicity. Also note that it accepts more than 1 input and output channels, which will be discussed in the next chapter. 
+To compute an element in the output, we need $2k_hk_w$ floating-point operations. The following function returns the giga floating-point operations needed to compute an convolution, where both input matrix and kernel matrix are assumed to be square for simplicity. Also note that it accepts more than 1 input and output channels, which will be discussed in the next chapter.
 
 ```{.python .input  n=3}
 # Save to the d2ltvm package.
@@ -54,7 +54,7 @@ def conv_gflop(oc, ic, n, k, p, s):
 
 ## Computation 
 
-Now we implement the basic convolution operator. We first pad the input matrix with 0s if necessary, and then compute the output. 
+Now we implement the basic convolution operator. We first pad the input matrix with 0s if necessary, and then compute the output.
 
 ```{.python .input  n=4}
 def conv(nh, nw, kh, kw, ph, pw, sh, sw):
@@ -115,7 +115,7 @@ mod(x, padded_x)
 print(padded_x)
 ```
 
-Before optimizing the performance, we should verity the correctness. The following two functions returns the ndarrays for both MXNet and TVM, where MXNet is used as the ground truth. 
+Before optimizing the performance, we should verity the correctness. The following two functions returns the ndarrays for both MXNet and TVM, where MXNet is used as the ground truth.
 
 ```{.python .input  n=7}
 # Save to the d2ltvm package.
@@ -139,7 +139,7 @@ def get_conv_data_tvm(n, k, p, s):
     return data, weight, out
 ```
 
-Then test multiple configurations using the default schedule. 
+Then test multiple configurations using the default schedule.
 
 ```{.python .input}
 def test_conv(schedule_generator):
@@ -191,7 +191,7 @@ def conv_schedule(X, K, Y, PaddedX):
 
 Note that little can be optimized for the reduction axes `rkh` and `rkw` because of their sequential nature. Therefore we move the inner axis split from columns as the innermost axis so we can vectorize its computation. 
 
-Test the correctness of this schedule. 
+Test the correctness of this schedule.
 
 ```{.python .input  n=9}
 test_conv(conv_schedule)
@@ -211,7 +211,7 @@ def benchmark_mod_tvm(mod, args, target):
     return timer(*args).mean
 ```
 
-Here is the function to evaluate the GFLOPS of the schedule we specified. We assume height and width are symmetric for simplicity. 
+Here is the function to evaluate the GFLOPS of the schedule we specified. We assume height and width are symmetric for simplicity.
 
 ```{.python .input  n=11}
 def benchmark_conv_tvm(n, k, p, s):
@@ -232,11 +232,11 @@ sizes = 2**np.arange(5, 11, 1).astype('int')
 tvm_gflops = [benchmark_conv_tvm(int(n), k, p, s) for n in sizes]
 ```
 
-Also define the benchmark function for MXNet and evaluate its performance on the same sizes. 
+Also define the benchmark function for MXNet and evaluate its performance on the same sizes.
 
 ```{.python .input  n=19}
 # Save to the d2ltvm package
-def benchmark_conv_mxnet(oc, ic, n, k, p, s):
+def conv_timer_mxnet(oc, ic, n, k, p, s):
     timer = timeit.Timer(
         setup='import d2ltvm\n'
         'from mxnet import npx\n'
@@ -253,7 +253,7 @@ def benchmark_conv_mxnet(oc, ic, n, k, p, s):
 mxnet_gflops = [benchmark_conv_mxnet(1, 1, int(n), k, p, s) for n in sizes]
 ```
 
-We can see that our optimized convolution is 10x faster than MXNet. The reason is that MXNet, whose backend is based on MKL-DNN, doesn't optimize for the single input/output channel cases, which are rarely used in practice. 
+We can see that our optimized convolution is 10x faster than MXNet. The reason is that MXNet, whose backend is based on MKL-DNN, doesn't optimize for the single input/output channel cases, which are rarely used in practice.
 
 ```{.python .input}
 d2ltvm.plot_gflops(sizes, [mxnet_gflops, tvm_gflops], ['mxnet', 'tvm'])

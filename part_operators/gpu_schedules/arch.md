@@ -14,7 +14,7 @@ The system we are using has 4 [Tesla V100](https://images.nvidia.com/content/vol
 
 A streaming multiprocessor (SM) roughly equals to a CPU core. The SM used by V100 is illustrated in :numref:`fig_gpu_sm`.
 
-![A streaming multiprocessor in Tesla V100](../img/gpu_sm.svg)
+![A streaming multiprocessor in Tesla V100](../../img/gpu_sm.svg)
 :label:`fig_gpu_sm`
 
 As can be seen that, a SM has four partitions. In each partition, there is 16 arithmetic units (AU) for float32, which is also called FP32 CUDA core. So a SM has 64 FP32 AUs in total, which is able to execute 64 float32 operators (e.g. FMA) in each time.  Besides the register files and the instruction loader/decoders, a SM has 8 tensor cores. Each tensor core is able to execute a $4\times 4$ float16 matrix product in each time. So each one, we can call it FP16 AU, counts for $2\times 4^3=128$ operators per clock.
@@ -25,7 +25,7 @@ Another difference is that SM only has a L1 cache, which similar to CPU's L1 cac
 
 The Tesla V100 card has a GV100 processor, which contains 80 SMs with a 6MB L2 cache shared by all SMs. It also ships with 16GB high-speed memory that is connected to the processor. The overall architecture is illustrated in :numref:`fig_gpu_v100`.
 
-![The Tesla V100 Architecture](../img/gpu_v100.svg)
+![The Tesla V100 Architecture](../../img/gpu_v100.svg)
 :label:`fig_gpu_v100`
 
 We compare the specification difference between the CPU and GPU used by this book in :numref:`tab_cpu_gpu_compare`. TODO(mli)

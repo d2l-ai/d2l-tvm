@@ -1,6 +1,7 @@
 # Schedules to Optimize CPU Performance
+:label:`ch_cpu_schedules`
 
-```toc
+```{.python .input .toc}
 :maxdepth: 2
 :numbered:
 
@@ -9,6 +10,6 @@ call_overhead
 vector_add
 matmul
 block_matmul
-basic_conv
 conv
+packed_conv
 ```

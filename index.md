@@ -1,33 +1,32 @@
 Dive into Deep Learning Compiler
 ================================
 
-**Working in progress. Please check back later.**
+**Working in progress. Check our
+  [roadmap](https://docs.google.com/document/d/14Bgo9TgczROlqcTinS5-Y4hyig-ae0Rm8uIFQl9OAEA/edit?usp=sharing)
+  for more details**
 
 This project is for readers who are interested in high-performance
-implementation of their programs for scientific computing, but may only know
-NumPy before. We are not aiming to replace the tutorials available at tvm.ai,
-but for more easy-to-read tutorials with a consistent theme among each
-section.
+implementation of their programs for scientific computing, especially deep
+learning models, but may haven't got their hands dirty yet. We assume
+readers have a minimal background, they may only use NumPy before. It means that
+we will explain things from scratch and introduce relative background when needed. Experienced
+readers, however, should also find the contents useful.
 
-```toc
-:maxdepth: 1
+We roughly classify contents into three major parts. In the first part, we will
+introduce how to implement and optimize operators, such as matrix multiplication
+and convolution, for various hardware. This is the basic component for
+scientific computing. In the second part, we will show how to convert neural
+network models from various deep learning frameworks and further optimize them
+in the program level. The last part we will address how to deploy the optimized
+program into various environment such as mobile phones.
 
-chapter_install/install
-```
-
-There are two parts of TVM that related to us to accelerate deep learning
-workloads. One is writing highly efficient operators, such as matrix product, on various hardware. The other part is optimizing the whole program, such as fusing small operators into a bigger one. This book focus on the first part, while leaving the second part for future works.
-
-To write an operator, we first define its computation expression. Like CUDA, we assume the workload can be executed in a data parallelism style. Here we only need to define how each element in the output is computed based on the inputs. We will present how to define the computation using the DSL (domain specific language) provided in by TVM.
-
-Next, we need to define how an expression is executed. If the output is a 10-by-10 matrix, then we need to run the expression 100 times. Naively running them sequentially will leads to poor performance. We need to fully utilize the machine resources for better performance, including SIMD (Single instruction, multiple data), multi-cores, and memory cache. We will demonstrate typical scheduling optimizations on multiple hardware.
 
 ```toc
 :maxdepth: 2
 :numbered:
 
-chapter_expression/index
-
-chapter_cpu_schedule/index
-chapter_gpu_schedule/index
+part_getting_started/index
+part_operators/index
+part_neural_networks/index
+part_deployment/index
 ```
