@@ -17,15 +17,15 @@ Let's first explain padding, which appends rows and columns with 0s. We already 
 # Save to the d2ltvm package.
 def padding(X, ph, pw):
     """Pad X with 0s
-    
+
     ph, pw : height and width padding
     """
     assert len(X.shape) >= 2
     nh, nw = X.shape[-2], X.shape[-1]
-    return tvm.compute( 
-            (*X.shape[0:-2], nh+ph*2, nw+pw*2), 
+    return tvm.compute(
+            (*X.shape[0:-2], nh+ph*2, nw+pw*2),
             lambda *i: tvm.if_then_else(
-                tvm.any(i[-2]<ph, i[-2]>=nh+ph, i[-1]<pw, i[-1]>=nw+pw), 
+                tvm.any(i[-2]<ph, i[-2]>=nh+ph, i[-1]<pw, i[-1]>=nw+pw),
                 0, X[i[:-2]+(i[-2]-ph, i[-1]-pw)]),
             name='PaddedX')
 ```
@@ -59,24 +59,24 @@ An example is illustrated in :numref:`fig_conv_strides`.
 ![The 2D convolution with paddings for 2, and strides of 3 and 2 for height and width respectively. The shaded portions are the output element and the input and core array elements used in its computation: $0\times0+0\times1+1\times2+2\times3=8$, $0\times0+6\times1+0\times2+0\times3=6$. ](../../img/conv-stride.svg)
 :label:`fig_conv_strides`
 
-In the more general multiple input and output case, assume we have a $c_i \times n_h \times n_w $ input tensor $X$, and a $c_o\times c_i\times k_h\times k_w$ kernel weight $K$, here $c_i$ and $c_o$ are the number of input channels and output channels, respectively. Then the output $Y$ has a shape
+In the more general multiple input and output case, assume we have a $c_i \times n_h \times n_w$ input tensor $X$, and a $c_o\times c_i\times k_h\times k_w$ kernel weight $K$, here $c_i$ and $c_o$ are the number of input channels and output channels, respectively. Then the output $Y$ has a shape
 
 $$ c_o \times \lfloor (h-k_h+2p_h)/s_h+1\rfloor  \times \lfloor (w-k_w+2p_w)/s_w+1\rfloor.$$
 
-In particular, the $i$-th submatrix $Y_i$, $i=1,\ldots,c_o$, is computed by 
+In particular, the $i$-th submatrix $Y_i$, $i=1,\ldots,c_o$, is computed by
 
 $$ Y_i = \sum_{j=1}^n X_j \star K_{i,j},$$
 
-In deep learning workloads, we often concatenate multiple inputs into a batch, which has the shape $b \times c_i \times n_h \times n_w $, here $b$ is the batch size. Applying convolution to this batch means running convolution on the $b$ 3-D tensors separately, and then concatenates results into a 4-D tensor with the first dimension size to be $b$. 
+In deep learning workloads, we often concatenate multiple inputs into a batch, which has the shape $b \times c_i \times n_h \times n_w$, here $b$ is the batch size. Applying convolution to this batch means running convolution on the $b$ 3-D tensors separately, and then concatenates results into a 4-D tensor with the first dimension size to be $b$.
 
-Note that the layout we used here is called `NCHW`, which means the 4 dimensions of the input tensors are batch, channel, height and width, respectively. Sometimes we use other channels such as `NHWC` which may offer a higher performance. 
+Note that the layout we used here is called `NCHW`, which means the 4 dimensions of the input tensors are batch, channel, height and width, respectively. Sometimes we use other channels such as `NHWC` which may offer a higher performance.
 
 Before implementing the convolution, we define a function to calculate the output width or height.
 
 ```{.python .input  n=52}
 # Save to the d2ltvm package.
 def conv_out_size(n, k, p, s):
-    """Compute the output size by given input size n, 
+    """Compute the output size by given input size n,
     kernel size k, padding p, and stride s"""
     return (n - k + 2 * p)//s + 1
 ```
@@ -87,7 +87,7 @@ Now let's implement the convolution. For simplicity we only consider the single 
 # Save to the d2ltvm package.
 def conv(oc, ic, nh, nw, kh, kw, ph=0, pw=0, sh=1, sw=1):
     """Convolution
-    
+
     oc, ic : output and input channels.
     nh, nw : input width and height
     kh, kw : kernel width and height
@@ -108,7 +108,7 @@ def conv(oc, ic, nh, nw, kh, kw, ph=0, pw=0, sh=1, sw=1):
     Y = tvm.compute(
         (oc, oh, ow),
         lambda c, i, j: tvm.sum(
-            PaddedX[ric, i*sh+rkh, j*sw+rkw] * K[c, ric, rkh, rkw], 
+            PaddedX[ric, i*sh+rkh, j*sw+rkw] * K[c, ric, rkh, rkw],
             axis=[ric, rkh, rkw]), name='Y')
     return X, K, Y, PaddedX
 ```
@@ -147,7 +147,7 @@ import mxnet as mx
 
 # Save to the d2ltvm package.
 def get_conv_data_mxnet(oc, ic, n, k, p, s, ctx=mx.cpu()):
-    data, weight, out = get_conv_data(oc, ic, n, k, p, s, 
+    data, weight, out = get_conv_data(oc, ic, n, k, p, s,
                                       lambda x: mx.nd.array(x, ctx=ctx))
     data, out = data.expand_dims(axis=0), out.expand_dims(axis=0)
     bias = mx.nd.zeros(out.shape[1], ctx=ctx)
@@ -155,9 +155,9 @@ def get_conv_data_mxnet(oc, ic, n, k, p, s, ctx=mx.cpu()):
 
 # Save to the d2ltvm package.
 def conv_mxnet(data, weight, bias, out, k, p, s):
-    mx.nd.Convolution(data, weight, bias, kernel=(k,k), stride=(s,s), 
+    mx.nd.Convolution(data, weight, bias, kernel=(k,k), stride=(s,s),
                       pad=(p,p), num_filter=out.shape[1], out=out)
-    
+
 data, weight, bias, out_mx = get_conv_data_mxnet(oc, ic, n, k, p, s)
 conv_mxnet(data, weight, bias, out_mx, k, p, s)
 ```

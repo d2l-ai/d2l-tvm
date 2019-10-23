@@ -1,9 +1,7 @@
 Dive into Deep Learning Compiler
 ================================
 
-**Working in progress. Check our
-  [roadmap](https://docs.google.com/document/d/14Bgo9TgczROlqcTinS5-Y4hyig-ae0Rm8uIFQl9OAEA/edit?usp=sharing)
-  for more details**
+**Working in progress. Check our [roadmap](https://docs.google.com/document/d/14Bgo9TgczROlqcTinS5-Y4hyig-ae0Rm8uIFQl9OAEA/edit?usp=sharing) for more details**
 
 This project is for readers who are interested in high-performance
 implementation of their programs for scientific computing, especially deep

@@ -7,7 +7,7 @@ In :numref:`ch_matmul_cpu` we saw that properly reordering the memory access pat
 %matplotlib inline
 import tvm
 import numpy as np
-import d2ltvm 
+import d2ltvm
 
 target = 'llvm -mcpu=core-avx2'
 ```
@@ -20,9 +20,9 @@ np_times = [d2ltvm.bench_workload(d2ltvm.np_matmul_timer(n)) for n in sizes]
 np_gflops = 2 * sizes **3 / 1e9 / np.array(np_times)
 ```
 
-## Blocked Matrix Multiplication 
+## Blocked Matrix Multiplication
 
-One commonly used strategy is tiling matrices into small blocks that can be fitted into the cache. 
+One commonly used strategy is tiling matrices into small blocks that can be fitted into the cache.
 The math behind it is that a block of $C$, e.g. `C[x:x+tx, y:y+ty]` by the NumPy notation, can be computed by the according rows of $A$ and columns of $B$. That is
 
 ``C[x:x+tx, y:y+ty] = np.dot(A[x:x+tx,:], B[:,y:y+ty])``
@@ -31,14 +31,14 @@ We can further decompose this matrix multiplication into multiple small ones
 
 ``C[x:x+tx, y:y+ty] = sum(np.dot(A[x:x+tx,k:k+tk], B[k:k+tk,y:y+ty]) for k in range(0,n,tk))``
 
-This computation is also illustrate in :numref:`fig_matmul_block`. 
+This computation is also illustrated in :numref:`fig_matmul_block`.
 
 ![Blocked tiling for matrix multiplication.](../../img/matmul_block.svg)
 :label:`fig_matmul_block`
 
-In each submatrix computation, we need to write a `(tx, ty)` shape matrix, and reach two matrices with shapes `(tx, tk)` and `(tk, ty)`. We can compute such a computation in a single CPU core. If we properly choose the tiling sizes `tx`, `ty` and `tk` to fit into the L1 cache, which is 32KB for our CPU (refer to :label:`ch_cpu_arch`). The reduced cache miss then should improve the performance. 
+In each submatrix computation, we need to write a `(tx, ty)` shape matrix, and reach two matrices with shapes `(tx, tk)` and `(tk, ty)`. We can compute such a computation in a single CPU core. If we properly choose the tiling sizes `tx`, `ty` and `tk` to fit into the L1 cache, which is 32KB for our CPU (refer to :label:`ch_cpu_arch`). The reduced cache miss then should improve the performance.
 
-Let's implement this idea. In the following codes, we choose `tx=ty=32` so that the submatrix to write has a size of `32*32*4=4KB`. The total size of the two submatrices to read is `2*32*4*4=1KB`. All of them can fit into our L1 cache easily. The tiling is implemented by the `split` method. 
+Let's implement this idea. In the following codes, we choose `tx=ty=32` so that the submatrix to write has a size of `32*32*4=4KB`. The total size of the two submatrices to read is `2*32*4*4=1KB`. All of them can fit into our L1 cache easily. The tiling is implemented by the `split` method.
 
 After tiling, we merge the outer width and height axes into a single one, so we can parallelize it. It means we will compute each block in parallel. Within a block, we reorder the axes, and then hint the compiler to use SIMD for the innermost axis, which is the inner axis split from the height axis, and unroll the second innermost axis, namely the inner reduction axis.
 
@@ -48,7 +48,7 @@ tx, ty, tk = 32, 32, 4  # tile sizes
 def block(n):
     A, B, C = d2ltvm.matmul(n, n, n)
     s = tvm.create_schedule(C.op)
-    # Tile by blocks, and then parallelize the computation of each block 
+    # Tile by blocks, and then parallelize the computation of each block
     xo, yo, xi, yi = s[C].tile(*C.op.axis, tx, ty)
     xy = s[C].fuse(xo, yo)
     s[C].parallel(xy)
@@ -70,7 +70,7 @@ blocked_gflops = d2ltvm.bench_matmul_tvm(block, sizes, target)
 d2ltvm.plot_gflops(sizes, [np_gflops, blocked_gflops], ['numpy', 'block'])
 ```
 
-The benchmark results show that our program is as good as NumPy for small matrices, but still doesn't do well for large ones. One major reason is because both read and write of these submatrices are not sequential. 
+The benchmark results show that our program is as good as NumPy for small matrices, but still doesn't do well for large ones. One major reason is because both read and write of these submatrices are not sequential.
 
 ## Write Cache
 
@@ -82,14 +82,14 @@ def cached_block(n):
     s = tvm.create_schedule(C.op)
     # Create a write cache for C
     CachedC = s.cache_write(C, 'local')
-    # Same as before, first tile by blocks, and then parallelize the 
-    # computation of each block 
+    # Same as before, first tile by blocks, and then parallelize the
+    # computation of each block
     xo, yo, xi, yi = s[C].tile(*C.op.axis, tx, ty)
     xy = s[C].fuse(xo, yo)
     s[C].parallel(xy)
     # Use the write cache for the output of the xy axis, namely a block.
     s[CachedC].compute_at(s[C], xy)
-    # Same as before to optimze the computation of a block . 
+    # Same as before to optimze the computation of a block .
     xc, yc = s[CachedC].op.axis
     ko, ki = s[CachedC].split(CachedC.op.reduce_axis[0], factor=tk)
     s[CachedC].reorder(ko, xc, ki, yc)
@@ -105,7 +105,7 @@ Note from the generated codes that we initialize `C.local` within the `yo` axis,
 
 ```{.python .input  n=44}
 cached_gflops = d2ltvm.bench_matmul_tvm(cached_block, sizes, target)
-d2ltvm.plot_gflops(sizes, [np_gflops, blocked_gflops, cached_gflops], 
+d2ltvm.plot_gflops(sizes, [np_gflops, blocked_gflops, cached_gflops],
             ['numpy', 'block', '+cache'])
 ```
 

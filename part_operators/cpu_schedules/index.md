@@ -1,7 +1,7 @@
 # Schedules to Optimize CPU Performance
 :label:`ch_cpu_schedules`
 
-```{.python .input .toc}
+```toc
 :maxdepth: 2
 :numbered:
 
