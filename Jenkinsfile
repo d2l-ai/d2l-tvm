@@ -14,6 +14,7 @@ stage("Build and Publish") {
       pip install mxnet-cu101mkl==1.6.0b20191004
       pip install psutil Pillow
       pip install https://tvm-repo.s3-us-west-2.amazonaws.com/tvm-0.6.dev0-cp37-cp37m-linux_x86_64.whl
+      pip install https://tvm-repo.s3-us-west-2.amazonaws.com/topi-0.6.dev0-py3-none-any.whl
       pip install git+https://github.com/d2l-ai/d2l-book
       python setup.py develop
       pip list
