@@ -3,3 +3,4 @@ _build/
 *.egg-info/
 */__pycache__/*
 /chapter_cpu_schedule/block_matmul.log
+resnet18*

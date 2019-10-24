@@ -93,8 +93,6 @@ s, args = default(64)
 print(tvm.lower(s, args, simple_mode=True))
 ```
 
-TVM generates LLVM codes for CPUs. [LLVM](https://en.wikipedia.org/wiki/LLVM) defines an intermediate representation that has been adopted by multiple programming languages. The LLVM compiler is then be able to compile the generated programs into machine codes.
-
 Remember in :numref:`ch_cpu_arch` we found our CPU supports AVX2, we pass `-mcpu=core-avx2` to LLVM so that it can generate AVX2 instructions if possible. In the following codes, we print a few lines of generated LLVM codes.
 
 ```{.python .input  n=28}
