@@ -51,7 +51,7 @@ Now test the results are as expected.
 mod = tvm.build(s, [A, B])
 c = tvm.nd.array(np.empty((3,), dtype='float32'))
 mod(tvm.nd.array(a), c)
-np.testing.assert_equal(b, c.asnumpy())
+np.testing.assert_equal(b, c.asnumpy(), atol=1e-5)
 ```
 
 We know that `a.sum()` will sum all elements in `a` and returns a scalar. Let's also implement in TVM. To do it, we need another reduction axis along the first dimension, which size is `n`. The result is a scalar, namely a 0-rank tensor, can be created with an empty shape tuple.
