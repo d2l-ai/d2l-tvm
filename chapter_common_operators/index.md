@@ -1,4 +1,4 @@
-# Implementations of Common Operators
+# Common Operators
 
 ```toc
 :maxdepth: 2

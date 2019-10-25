@@ -1,4 +1,4 @@
-# Expressions
+# Expressions for Operators
 
 In :numref:`ch_vector_add` you have seen how to build the vector addition
 expression in TVM. This chapter convers more concepts in TVM to construct

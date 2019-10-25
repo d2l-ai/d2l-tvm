@@ -1,6 +1,6 @@
 # Neural Network Inference
 
-You have seen how to implement and compile a simple vector addition operator in the last chapter. Now we will make a big jump to compile a whole pre-trained neural network, which consists of a set of operators, to run the inference. 
+You have seen how to implement and compile a simple vector addition operator in the last chapter. Now we will make a big jump to compile a whole pre-trained neural network, which consists of a set of operators, to run the inference.
 
 ```{.python .input  n=1}
 import numpy as np
@@ -39,7 +39,7 @@ image = Image.open('../data/cat.jpg').resize((224, 224))
 image
 ```
 
-According to the [model zoo page](https://mxnet.apache.org/api/python/docs/api/gluon/model_zoo/index.html). Image pixes are normalized on each color channel, and the data layout is `(batch, RGB channels, height and width)`. The following function transforms the input image to satisfies the requirement. 
+According to the [model zoo page](https://mxnet.apache.org/api/python/docs/api/gluon/model_zoo/index.html). Image pixes are normalized on each color channel, and the data layout is `(batch, RGB channels, height and width)`. The following function transforms the input image to satisfies the requirement.
 
 ```{.python .input  n=5}
 def preprocessing(image):
@@ -118,7 +118,7 @@ with open(params_fn, 'wb') as f:
 
 A typical usage of the save library is for deployment, e.g. we want to deploy the previous the ResNet-18 on a large amount of devices. Though it's often straightforward to install MXNet, but in some cases, e.g. mobile phones, we prefer to have a compact library. As we can see that the library `resnet18.jar` size is only 150KB, which is way smaller than a complete deep learning library. The reason is because it only contains the operators needed by this model. Then we only need to deploy these files on the target device, with a proper TVM runtime, whose size is often a few hundreds KB. 
 
-We will dive deep into the deployment later in :numref:`part_deployment`. Here we simply load the saved module back. 
+We will dive deep into the deployment later in :numref:`part_deployment`. Here we simply load the saved module back.
 
 ```{.python .input  n=12}
 loaded_graph = open(graph_fn).read()

@@ -1,4 +1,4 @@
-# Schedules to Optimize CPU Performance
+# Operator Optimizations on CPUs
 :label:`ch_cpu_schedules`
 
 ```toc

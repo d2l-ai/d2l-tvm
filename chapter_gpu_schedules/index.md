@@ -1,4 +1,4 @@
-# Schedules to Optimize GPU Performance
+# Operator Optimizations on GPUs
 :label:`ch_gpu_schedules`
 
 

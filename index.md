@@ -23,8 +23,16 @@ program into various environment such as mobile phones.
 :maxdepth: 2
 :numbered:
 
-part_getting_started/index
-part_operators/index
-part_neural_networks/index
-part_deployment/index
+
+
+
+
+
+chapter_getting_started/index
+chapter_expressions/index
+chapter_common_operators/index
+chapter_cpu_schedules/index
+chapter_gpu_schedules/index
+chapter_neural_networks/index
+chapter_deployment/index
 ```
