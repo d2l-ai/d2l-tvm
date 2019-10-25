@@ -51,7 +51,7 @@ Now test the results are as expected.
 mod = tvm.build(s, [A, B])
 c = tvm.nd.array(np.empty((3,), dtype='float32'))
 mod(tvm.nd.array(a), c)
-np.testing.assert_equal(b, c.asnumpy(), atol=1e-5)
+np.testing.assert_equal(b, c.asnumpy())
 ```
 
 We know that `a.sum()` will sum all elements in `a` and returns a scalar. Let's also implement in TVM. To do it, we need another reduction axis along the first dimension, which size is `n`. The result is a scalar, namely a 0-rank tensor, can be created with an empty shape tuple.
@@ -69,7 +69,7 @@ Let's also verify the results.
 mod = tvm.build(s, [A, B])
 c = tvm.nd.array(np.empty((), dtype='float32'))
 mod(tvm.nd.array(a), c)
-np.testing.assert_allclose(a.sum(), c.asnumpy())
+np.testing.assert_allclose(a.sum(), c.asnumpy(), atol=1e-5)
 ```
 
 Beyond `tvm.sum`, there are other reduction operators such as `tvm.min` and `tvm.max`. We can also implement customized reduction operators as well.
@@ -117,7 +117,7 @@ Again, let's verify the results.
 mod = tvm.build(s, [A, B])
 b = tvm.nd.array(np.empty((3,), dtype='float32'))
 mod(tvm.nd.array(a), b)
-np.testing.assert_allclose(a.prod(axis=1), b.asnumpy())
+np.testing.assert_allclose(a.prod(axis=1), b.asnumpy(), atol=1e-5)
 ```
 
 ## Summary
