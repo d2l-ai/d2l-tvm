@@ -33,7 +33,7 @@ We can further decompose this matrix multiplication into multiple small ones
 
 This computation is also illustrated in :numref:`fig_matmul_block`.
 
-![Blocked tiling for matrix multiplication.](../../img/matmul_block.svg)
+![Blocked tiling for matrix multiplication.](../img/matmul_block.svg)
 :label:`fig_matmul_block`
 
 In each submatrix computation, we need to write a `(tx, ty)` shape matrix, and reach two matrices with shapes `(tx, tk)` and `(tk, ty)`. We can compute such a computation in a single CPU core. If we properly choose the tiling sizes `tx`, `ty` and `tk` to fit into the L1 cache, which is 32KB for our CPU (refer to :label:`ch_cpu_arch`). The reduced cache miss then should improve the performance.

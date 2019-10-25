@@ -56,7 +56,7 @@ $$ Y_{i,j} = \sum_{a=1}^{k_w}\sum_{b=1}^{k_h} X_{i s_w+a, j s_h+b} K_{a, b}$$
 
 An example is illustrated in :numref:`fig_conv_strides`.
 
-![The 2D convolution with paddings for 2, and strides of 3 and 2 for height and width respectively. The shaded portions are the output element and the input and core array elements used in its computation: $0\times0+0\times1+1\times2+2\times3=8$, $0\times0+6\times1+0\times2+0\times3=6$. ](../../img/conv-stride.svg)
+![The 2D convolution with paddings for 2, and strides of 3 and 2 for height and width respectively. The shaded portions are the output element and the input and core array elements used in its computation: $0\times0+0\times1+1\times2+2\times3=8$, $0\times0+6\times1+0\times2+0\times3=6$. ](../img/conv-stride.svg)
 :label:`fig_conv_strides`
 
 In the more general multiple input and output case, assume we have a $c_i \times n_h \times n_w$ input tensor $X$, and a $c_o\times c_i\times k_h\times k_w$ kernel weight $K$, here $c_i$ and $c_o$ are the number of input channels and output channels, respectively. Then the output $Y$ has a shape

@@ -8,7 +8,7 @@ $$C_{i,j} = \sum_{k=1}^l A_{i,k} B_{k,j}.$$
 
 The elements assessed to compute $C_{i,j}$ are illustrated in :numref:`fig_matmul_default`.
 
-![Compute $C_{x,y}$ in matrix multiplication.](../../img/matmul_default.svg)
+![Compute $C_{x,y}$ in matrix multiplication.](../img/matmul_default.svg)
 :label:`fig_matmul_default`
 
 The following function returns the computing expression of matrix multiplication.

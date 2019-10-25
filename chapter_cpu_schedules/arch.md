@@ -46,7 +46,7 @@ The CPU frequency increased rapidly until the beginning of the 21st century. On 
 
 we can see that it also has a max 3 GHz clock rate, but it might be 100x faster than the Pentium 4 CPU. One secure source is that new models do much better on parallel execution. Next we briefly discuss two typical parallelizations.
 
-![Single core vs single core with SIMD vs multi-core with SIMD.](../../img/cpu_parallel_arch.svg)
+![Single core vs single core with SIMD vs multi-core with SIMD.](../img/cpu_parallel_arch.svg)
 :label:`fig_cpu_parallel_arch`
 
 ### SIMD
@@ -117,7 +117,7 @@ As can be seen, there are three levels of caches: L1, L2 and L3. The L1 cache ha
 the L1 cache has a 1 ns latency, the L2 cache's latency is around 3 ns, and the L3 cache is slower, with a latency about 20 ns, while still faster than the main memory's 100 ns latency.
 
 
-![The layout of main memory and caches.](../../img/cpu_memory.svg)
+![The layout of main memory and caches.](../img/cpu_memory.svg)
 :label:`fig_cpu_memory`
 
 A brief memory subsystem layout is illustrated in :numref:`fig_cpu_memory`.

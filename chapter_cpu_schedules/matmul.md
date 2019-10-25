@@ -7,7 +7,7 @@ We saw the NumPy `dot` operator nearly reaches the peak performance of the Xeon 
 
 ```{.python .input  n=1}
 %matplotlib inline
-import d2ltvm 
+import d2ltvm
 import numpy as np
 import timeit
 import tvm
@@ -72,9 +72,9 @@ d2ltvm.plot_gflops(sizes, [np_gflops, default_gflops], ['numpy', 'default'])
 
 ## Reordering Axes
 
-The first problem we can see from :numref:`fig_matmul_default` is that $B$ is accessed by columns while its elements are stored by rows. The reason is because we iterate axis `y` before axis `k`. Simply switching these two for-loops will make all elements read and write sequential. :numref:`fig_matmul_reorder` illustrates the changed the data access pattern. 
+The first problem we can see from :numref:`fig_matmul_default` is that $B$ is accessed by columns while its elements are stored by rows. The reason is because we iterate axis `y` before axis `k`. Simply switching these two for-loops will make all elements read and write sequential. :numref:`fig_matmul_reorder` illustrates the changed the data access pattern.
 
-![Reorder axes in matrix multiplication.](../../img/matmul_reorder.svg)
+![Reorder axes in matrix multiplication.](../img/matmul_reorder.svg)
 :label:`fig_matmul_reorder`
 
 To implement it, we change the axes order from (`x`, `y`, `k`) to (`x`, `k`, `y`) by the `reorder` method.
@@ -94,7 +94,7 @@ We can see that the reordering significantly improves the performance compared t
 
 ```{.python .input  n=7}
 reorder_gflops = bench_matmul_tvm(reorder, sizes, target)
-d2ltvm.plot_gflops(sizes, [np_gflops, default_gflops, reorder_gflops], 
+d2ltvm.plot_gflops(sizes, [np_gflops, default_gflops, reorder_gflops],
             ['numpy', 'default', 'reorder'])
 ```
 
@@ -114,19 +114,19 @@ print(tvm.lower(s, args, simple_mode=True))
 
 ```{.python .input  n=9}
 parallel_gflops = bench_matmul_tvm(parallel, sizes, target)
-d2ltvm.plot_gflops(sizes, [np_gflops, default_gflops, reorder_gflops, parallel_gflops], 
+d2ltvm.plot_gflops(sizes, [np_gflops, default_gflops, reorder_gflops, parallel_gflops],
             ['numpy', 'default', 'reorder', 'parallel'])
 ```
 
-Parallelization improves the performance again. But we can see that there is still a gap compared to NumPy on large matrices, specially when they cannot fit into the L2 cache. We will try to resolve it in the next chapter.  
+Parallelization improves the performance again. But we can see that there is still a gap compared to NumPy on large matrices, specially when they cannot fit into the L2 cache. We will try to resolve it in the next chapter.
 
 ## Summary
 
-1. Reordering the for-loops in matrix multiplication properly improves the performance. 
+1. Reordering the for-loops in matrix multiplication properly improves the performance.
 1. Parallelization is also important.
 
 ## Exercises
 
 1. Change the number of threads
-1. Try a different axes order in function `parallel` 
+1. Try a different axes order in function `parallel`
 1. Benchmark larger matrix sizes
