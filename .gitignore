@@ -4,3 +4,5 @@ _build/
 */__pycache__/*
 /chapter_cpu_schedule/block_matmul.log
 resnet18*
+*.tar
+*.so

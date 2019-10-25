@@ -14,4 +14,5 @@ somewhere. In this part, we'll discuss:
 install
 vector_add
 from_mxnet
+remote
 ```

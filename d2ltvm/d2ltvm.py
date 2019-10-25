@@ -5,7 +5,7 @@
 import sys
 d2ltvm = sys.modules[__name__]
 
-# Defined in file: ./part_getting_started/install.md
+# Defined in file: ./chapter_getting_started/install.md
 import tvm
 import time
 import timeit
@@ -15,7 +15,7 @@ from IPython import display
 import mxnet as mx
 
 
-# Defined in file: ./part_getting_started/vector_add.md
+# Defined in file: ./chapter_getting_started/vector_add.md
 def get_abc(shape, constructor=None):
     """Return random a, b and empty c with the same shape.  
     """
@@ -28,7 +28,7 @@ def get_abc(shape, constructor=None):
     return a, b, c
 
 
-# Defined in file: ./part_getting_started/vector_add.md
+# Defined in file: ./chapter_getting_started/vector_add.md
 def vector_add(n):
     """TVM expression for vector addition"""
     A = tvm.placeholder((n,), name='a')
@@ -37,7 +37,16 @@ def vector_add(n):
     return A, B, C
 
 
-# Defined in file: ./part_operators/common_operators/matmul.md
+# Defined in file: ./chapter_getting_started/from_mxnet.md
+def image_preprocessing(image):
+    image = np.array(image) - np.array([123., 117., 104.])
+    image /= np.array([58.395, 57.12, 57.375])
+    image = image.transpose((2, 0, 1))
+    image = image[np.newaxis, :]
+    return image.astype('float32')
+
+
+# Defined in file: ./chapter_common_operators/matmul.md
 def matmul(n, m, l):
     """Return the computing expression of matrix multiplication
     A : n x l matrix
@@ -47,39 +56,39 @@ def matmul(n, m, l):
     k = tvm.reduce_axis((0, l), name='k')
     A = tvm.placeholder((n, l), name='A')
     B = tvm.placeholder((l, m), name='B')
-    C = tvm.compute((n, m), 
+    C = tvm.compute((n, m),
                     lambda x, y: tvm.sum(A[x, k] * B[k, y], axis=k),
                     name='C')
     return A, B, C
 
 
-# Defined in file: ./part_operators/common_operators/conv.md
+# Defined in file: ./chapter_common_operators/conv.md
 def padding(X, ph, pw):
     """Pad X with 0s
-    
+
     ph, pw : height and width padding
     """
     assert len(X.shape) >= 2
     nh, nw = X.shape[-2], X.shape[-1]
-    return tvm.compute( 
-            (*X.shape[0:-2], nh+ph*2, nw+pw*2), 
+    return tvm.compute(
+            (*X.shape[0:-2], nh+ph*2, nw+pw*2),
             lambda *i: tvm.if_then_else(
-                tvm.any(i[-2]<ph, i[-2]>=nh+ph, i[-1]<pw, i[-1]>=nw+pw), 
+                tvm.any(i[-2]<ph, i[-2]>=nh+ph, i[-1]<pw, i[-1]>=nw+pw),
                 0, X[i[:-2]+(i[-2]-ph, i[-1]-pw)]),
             name='PaddedX')
 
 
-# Defined in file: ./part_operators/common_operators/conv.md
+# Defined in file: ./chapter_common_operators/conv.md
 def conv_out_size(n, k, p, s):
-    """Compute the output size by given input size n, 
+    """Compute the output size by given input size n,
     kernel size k, padding p, and stride s"""
     return (n - k + 2 * p)//s + 1
 
 
-# Defined in file: ./part_operators/common_operators/conv.md
+# Defined in file: ./chapter_common_operators/conv.md
 def conv(oc, ic, nh, nw, kh, kw, ph=0, pw=0, sh=1, sw=1):
     """Convolution
-    
+
     oc, ic : output and input channels.
     nh, nw : input width and height
     kh, kw : kernel width and height
@@ -100,12 +109,12 @@ def conv(oc, ic, nh, nw, kh, kw, ph=0, pw=0, sh=1, sw=1):
     Y = tvm.compute(
         (oc, oh, ow),
         lambda c, i, j: tvm.sum(
-            PaddedX[ric, i*sh+rkh, j*sw+rkw] * K[c, ric, rkh, rkw], 
+            PaddedX[ric, i*sh+rkh, j*sw+rkw] * K[c, ric, rkh, rkw],
             axis=[ric, rkh, rkw]), name='Y')
     return X, K, Y, PaddedX
 
 
-# Defined in file: ./part_operators/common_operators/conv.md
+# Defined in file: ./chapter_common_operators/conv.md
 def get_conv_data(oc, ic, n, k, p=0, s=1, generator=None):
     np.random.seed(0)
     data = np.random.normal(size=(ic, n, n)).astype('float32')
@@ -117,23 +126,22 @@ def get_conv_data(oc, ic, n, k, p=0, s=1, generator=None):
     return data, weight, out
 
 
-# Defined in file: ./part_operators/common_operators/conv.md
+# Defined in file: ./chapter_common_operators/conv.md
 def get_conv_data_mxnet(oc, ic, n, k, p, s, ctx=mx.cpu()):
-    data, weight, out = get_conv_data(oc, ic, n, k, p, s, 
+    data, weight, out = get_conv_data(oc, ic, n, k, p, s,
                                       lambda x: mx.nd.array(x, ctx=ctx))
     data, out = data.expand_dims(axis=0), out.expand_dims(axis=0)
     bias = mx.nd.zeros(out.shape[1], ctx=ctx)
     return data, weight, bias, out
 
 
-# Defined in file: ./part_operators/common_operators/conv.md
+# Defined in file: ./chapter_common_operators/conv.md
 def conv_mxnet(data, weight, bias, out, k, p, s):
-    mx.nd.Convolution(data, weight, bias, kernel=(k,k), stride=(s,s), 
+    mx.nd.Convolution(data, weight, bias, kernel=(k,k), stride=(s,s),
                       pad=(p,p), num_filter=out.shape[1], out=out)
-    
 
 
-# Defined in file: ./part_operators/cpu_schedules/call_overhead.md
+# Defined in file: ./chapter_cpu_schedules/call_overhead.md
 def bench_workload(workload):
     """Benchmarka a workload
     
@@ -147,7 +155,7 @@ def bench_workload(workload):
     return workload(num_repeats) / num_repeats
 
 
-# Defined in file: ./part_operators/cpu_schedules/vector_add.md
+# Defined in file: ./chapter_cpu_schedules/vector_add.md
 def plot(X, Y, xlabel=None, ylabel=None, legend=[], xlim=None,
          ylim=None, xscale='linear', yscale='linear', fmts=None,
          figsize=(6, 4)):
@@ -171,14 +179,14 @@ def plot(X, Y, xlabel=None, ylabel=None, legend=[], xlim=None,
     
 
 
-# Defined in file: ./part_operators/cpu_schedules/vector_add.md
+# Defined in file: ./chapter_cpu_schedules/vector_add.md
 def plot_gflops(sizes, gflops, legend):
     d2ltvm.plot(sizes, gflops, xlabel='Size', ylabel='GFLOPS', 
              xscale='log', yscale='log', 
              legend=legend, fmts=['--']*(len(gflops)-1)+['-'])
 
 
-# Defined in file: ./part_operators/cpu_schedules/vector_add.md
+# Defined in file: ./chapter_cpu_schedules/vector_add.md
 def bench_vector_add_tvm(func, sizes, target):
     def workload(nrepeats):
         timer = mod.time_evaluator(mod.entry_name, ctx=ctx, number=nrepeats)
@@ -193,7 +201,7 @@ def bench_vector_add_tvm(func, sizes, target):
     return 2 * sizes / 1e9 / np.array(times)
 
 
-# Defined in file: ./part_operators/cpu_schedules/matmul.md
+# Defined in file: ./chapter_cpu_schedules/matmul.md
 def np_matmul_timer(n):
     timer = timeit.Timer(setup='import numpy as np\n'
                          'import d2ltvm\n'
@@ -202,7 +210,7 @@ def np_matmul_timer(n):
     return timer.timeit
 
 
-# Defined in file: ./part_operators/cpu_schedules/matmul.md
+# Defined in file: ./chapter_cpu_schedules/matmul.md
 def bench_matmul_tvm(func, sizes, target):
     def workload(nrepeats):
         timer = mod.time_evaluator(mod.entry_name, ctx=ctx, number=nrepeats)
@@ -217,7 +225,7 @@ def bench_matmul_tvm(func, sizes, target):
     return 2 * sizes**3 / 1e9 / np.array(times)
 
 
-# Defined in file: ./part_operators/cpu_schedules/conv.md
+# Defined in file: ./chapter_cpu_schedules/conv.md
 def conv_gflop(oc, ic, n, k, p, s):
     """Compute the #floating points in a convolution.
     
@@ -228,7 +236,7 @@ def conv_gflop(oc, ic, n, k, p, s):
     return 2 * oc * ic * on * on * k * k / 1e9
 
 
-# Defined in file: ./part_operators/cpu_schedules/conv.md
+# Defined in file: ./chapter_cpu_schedules/conv.md
 def conv_timer_mxnet(c, n, k, ctx):
     """Benchmark convolution in MXNet
     
@@ -247,7 +255,7 @@ def conv_timer_mxnet(c, n, k, ctx):
     return timer.timeit
 
 
-# Defined in file: ./part_operators/cpu_schedules/conv.md
+# Defined in file: ./chapter_cpu_schedules/conv.md
 def bench_conv_mxnet(sizes, ctx='cpu'):
     """Return the GFLOPs of MXNet convolution"""
     return [conv_gflop(c, c, n, k, (k-1)//2, 1) / 
@@ -255,7 +263,7 @@ def bench_conv_mxnet(sizes, ctx='cpu'):
             for c, n, k in sizes]
 
 
-# Defined in file: ./part_operators/cpu_schedules/conv.md
+# Defined in file: ./chapter_cpu_schedules/conv.md
 def bench_conv_tvm(func, sizes, target):
     def workload(nrepeats):
         timer = mod.time_evaluator(mod.entry_name, ctx=ctx, number=nrepeats)

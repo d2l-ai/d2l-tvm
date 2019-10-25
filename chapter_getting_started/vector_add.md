@@ -3,7 +3,7 @@
 
 Now you have installed all libraries, let's write our first program: summing two vectors `a` and `b`. It's straightforward in NumPy, we can do it by `c = a + b`.
 
-```{.python .input  n=2}
+```{.python .input  n=1}
 import numpy as np
 
 np.random.seed(0)
@@ -17,7 +17,7 @@ Here we create two random vectors with length 100, and sum them element-wisely. 
 
 Despite that we can use the build-in `+` operator in NumPy, let's try to implement it by only use scalar operators. It will help understand the implementation with TVM. The following function uses a for-loop to iterate every element, and then sum two elements with the scalar `+` operator.
 
-```{.python .input  n=3}
+```{.python .input  n=2}
 def vector_add(a, b, c):
     for i in range(n):
         c[i] = a[i] + b[i]
@@ -29,7 +29,7 @@ np.testing.assert_array_equal(c, d)
 
 Given we will frequently create two random ndarrays and another empty one to store the results in the following chapters, we save this routine to reuse it in the future.
 
-```{.python .input}
+```{.python .input  n=3}
 # Save to the d2ltvm package.
 def get_abc(shape, constructor=None):
     """Return random a, b and empty c with the same shape.  
@@ -45,8 +45,7 @@ def get_abc(shape, constructor=None):
 
 Note that we fixed the random seed so that we will always get the same results to simplify the comparison between NumPy, TVM and others. In addition, it accepts an optional `constructor` to  convert the data into a different format. 
 
-## Define the Computation
-:label:`def_com`
+## Defining the Computation
 
 Now let's implement `vector_add` in TVM. The TVM implementation differs above in two ways:
 
@@ -57,7 +56,7 @@ In the following program, we first declare the placeholders `A` and `B` for both
 
 Next we define how the output `C` is computed by `tvm.compute`. It accepts two arguments, the output shape, and a function to compute each element by giving its index. Since the output is a vector, its element by be indexed by a single integer. There the lambda function accepts a single argument `i`, and return `c[i]`, which is identical to `c[i] = a[i] + b[i]` defined in `vector_add`. One difference is that we didn't write the for-loop, which will be filled by TVM later.
 
-```{.python .input  n=6}
+```{.python .input  n=4}
 import tvm
 
 # Save to the d2ltvm package.
@@ -74,15 +73,14 @@ type(C)
 
 We can see that `C` is again a `Tensor` object. The operator, i.e. how `C` is computed, can be accessed by `C.op`.
 
-## Create a Schedule
+## Creating a Schedule
 
 To run the computation, we need to specify how to execute the program, for example, the order to access data and how to do multi-threading. Such an execution plan is called a schedule. A schedule often doesn't not change the results, but a good schedule fully utilizes the machine resources to achieve high performance.
 
 Let's create a default schedule on the operator and print the pseudo codes.
 
-```{.python .input  n=16}
+```{.python .input  n=5}
 s = tvm.create_schedule(C.op)
-
 tvm.lower(s, [A, B, C], simple_mode=True)
 ```
 
@@ -90,17 +88,18 @@ As can be seen, the pseudo codes are C-like. TVM adds proper for-loops according
 
 An efficient schedule is often closely related to the hardware we are using. We will explore various options in :numref:`ch_schedule` later.
 
-## Compile and Run
+## Compilation and Execution
 
 Once both computation and schedule are defined, we can compile them into an executable module with `tvm.build`. We must specify two arguments, the schedule, and all and  We can specify various targets such as GPU. Here we just use the default CPU target.
 
-```{.python .input}
-tvm_vector_add = tvm.build(s, [A, B, C])
+```{.python .input  n=6}
+mod = tvm.build(s, [A, B, C])
+type(mod)
 ```
 
 The compiled module accepts three arguments, `A`, `B` and `C`. All of them need to be a `tvm.ndarray.NDArray` object. The easiest way is creating a NumPy ndarray and then convert into TVM ndarray by `tvm.nd.array`. We can convert it back to NumPy by the `asnumpy` method.
 
-```{.python .input}
+```{.python .input  n=7}
 x = np.ones(2)
 y = tvm.nd.array(x)
 type(y), y.asnumpy()
@@ -108,14 +107,14 @@ type(y), y.asnumpy()
 
 Now let's construct the same `a` and `b`, but returns them as TVM ndarrays.
 
-```{.python .input}
+```{.python .input  n=8}
 a, b, d = get_abc(100, tvm.nd.array)
 ```
 
 Do the computation with `tvm_vector_add`, the result `d` should be equal to `c` that is computed through NumPy.
 
-```{.python .input}
-tvm_vector_add(a, b, d)
+```{.python .input  n=9}
+mod(a, b, d)
 np.testing.assert_array_equal(c, d.asnumpy())
 ```
 
@@ -123,35 +122,58 @@ np.testing.assert_array_equal(c, d.asnumpy())
 
 Remember that we specified both inputs should be 100-length vectors when declaring `A` and `B`.
 
-```{.python .input}
+```{.python .input  n=10}
 A.shape, B.shape, C.shape
 ```
 
 TVM will check if the input shapes satisfy this specification.
 
-```{.python .input  n=81}
+```{.python .input  n=11}
 try:
     a, b, c = get_abc(200, tvm.nd.array)
-    tvm_vector_add(a, b, c)
+    mod(a, b, c)
 except tvm.TVMError as e:
     print(e)
 ```
 
 The default data type in TVM is `float32`.
 
-```{.python .input}
+```{.python .input  n=12}
 A.dtype, B.dtype, C.dtype
 ```
 
 An error will appear if input with a different data type.
 
-```{.python .input}
+```{.python .input  n=13}
 try:
     a, b, c = get_abc(100, tvm.nd.array)
     a = tvm.nd.array(a.asnumpy().astype('float64'))
-    tvm_vector_add(a, b, c)
+    mod(a, b, c)
 except tvm.TVMError as e:
     print(e)
+```
+
+## Saving and Loading a Module
+
+A compiled a module can be saved into disk.
+
+```{.python .input  n=14}
+mod_fname = 'vector-add.tar'
+mod.export_library(mod_fname)
+```
+
+And then load it by later.
+
+```{.python .input  n=15}
+loaded_mod = tvm.module.load(mod_fname)
+```
+
+Verify the results.
+
+```{.python .input  n=17}
+a, b, c = get_abc(100, tvm.nd.array)
+loaded_mod(a, b, c)
+np.testing.assert_array_equal(a.asnumpy() + b.asnumpy(), c.asnumpy())
 ```
 
 ## Summary
@@ -161,3 +183,5 @@ Implementing an operator using TVM has three steps:
 1. Declare the computation by specifying input and output shapes and how each output element is computed.
 2. Create a schedule to fully utilize the machine resources.
 3. Compile to the hardware target.
+
+In addition, we can save the compiled module into disk so we can load it back later.
