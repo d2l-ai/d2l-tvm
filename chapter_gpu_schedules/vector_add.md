@@ -45,7 +45,7 @@ It can be extended to 2-D and 3-D indexing schemes, where we add additional `.y`
 
 During execution, all threads in a single block will be executed in the same core, or streaming multiprocessor. We could assume them will be executed simultaneously so we can synchronize these threads in the middle of a kernel. While blocks may run on different cores. 
 
-Analogy to CPUs, a thread block is the workload we run in parallel over CPU threads, while a thread is workload that could be vectorized. Remember in the last part of :numref:`ch_vector_add_cpu` we split the for-loop for vector addition for parallelization and vectorization separately, we can do it similarly for GPUs programming. 
+Analogy to CPUs, a thread block is the workload we run in parallel over CPU threads, while a thread is workload that could be vectorized. Remember in the last part of :numref:`ch_vector_add_cpu` we split the for-loop for vector addition for parallelization and vectorization separately, we can do it similarly for GPUs programming.
 
 ```{.python .input  n=17}
 factor = 64
@@ -64,7 +64,7 @@ tvm.lower(s, args, simple_mode=True)
 
 Compared to `vectorized` defined in :numref:`ch_vector_add_cpu`, there are two major difference. One is that we bind axes into block and thread indexing axes instead of call `parallel` and `vectorize`. The other one is that the pseudo codes only have the kernel, instead of the whole program with for-loops. The indexing is obtained by the 1-D indexing scheme we shown before. 
 
-If you wrote CUDA programs before, you may want to check the generated CUDA program. Note that the target is set to be `cuda` during compiling. 
+If you wrote CUDA programs before, you may want to check the generated CUDA program. Note that the target is set to be `cuda` during compiling.
 
 ```{.python .input  n=14}
 mod = tvm.build(s, args, 'cuda')
@@ -72,14 +72,14 @@ dev_mod = mod.imported_modules[0]
 print(dev_mod.get_source())
 ```
 
-As mentioned in :numref:`ch_gpu_arch`, GPUs have their own memories. To execute an operation on a GPU, we need to copy data from the main memory to its memory. For NVidia GPUs, the context for the $i$-th GPU can be presented by either `tvm.context('cuda', i)` or simply `tvm.gpu(i)`. The following codes copy data to the first GPU. Note the `gpu(0)` shown in the first line. 
+As mentioned in :numref:`ch_gpu_arch`, GPUs have their own memories. To execute an operation on a GPU, we need to copy data from the main memory to its memory. For NVidia GPUs, the context for the $i$-th GPU can be presented by either `tvm.context('cuda', i)` or simply `tvm.gpu(i)`. The following codes copy data to the first GPU. Note the `gpu(0)` shown in the first line.
 
 ```{.python .input}
 ctx = tvm.context('cuda', 0)
 tvm.nd.array(np.zeros((3,3)), ctx)
 ```
 
-Remember that the `bench_vector_add_tvm` function already takes care of the context. Now let's benchmark the above schedule against MXNet. 
+Remember that the `bench_vector_add_tvm` function already takes care of the context. Now let's benchmark the above schedule against MXNet.
 
 ```{.python .input  n=16}
 cuda_gflops = d2ltvm.bench_vector_add_tvm(parallel, sizes, 'cuda')
@@ -97,16 +97,6 @@ d2ltvm.plot_gflops(sizes, [mx_gflops, cuda_gflops, cuda_gflops_2],
 
 Now we can see performances are matched.
 
-## Use OpenCL
-
-It's recommended to use `cuda` target for Nvidia GPUs. For other GPUs, such as AMD and ARM, CUDA may be not available. But most GPUs supports [OpenCL](https://en.wikipedia.org/wiki/OpenCL).  To compile to the OpenCL backend, we only need to change the target in `tvm.build` from `cuda` to `opencl`.
-
-```{.python .input  n=19}
-opencl_gflops = d2ltvm.bench_vector_add_tvm(parallel, sizes, 'opencl')
-d2ltvm.plot_gflops(sizes, [cuda_gflops_2, opencl_gflops], ['CUDA', 'OpenCL'])
-```
-
-As can been seen, the OpenCL backend has slightly larger overhead than CUDA, but their performance are identical for large workloads.
 
 ## Summary
 
