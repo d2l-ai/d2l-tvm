@@ -12,7 +12,7 @@ Please download it and extract it into a
 folder. For example, on Linux/macos, if you have both `wget` and `unzip`
 installed, you can do it through:
 
-```{.python .input}
+```bash
 wget http://tvm.d2l.ai/d2l-tvm.zip
 unzip d2l-tvm.zip -d d2l-tvm
 ```
@@ -27,7 +27,7 @@ a baseline.
 
 First install `d2ltvm`:
 
-```{.python .input .bas}
+```bash
 pip install git+https://github.com/d2l-ai/d2l-tvm
 ```
 
@@ -37,7 +37,7 @@ instructions  on
 [tvm.ai](https://docs.tvm.ai/install/from_source.html) to install tvm. The configration in `config.cmake` this
 book requires includes
 
-```{.python .input}
+```bash
 set(USE_CUDA ON)
 set(USE_OPENCL ON)
 set(USE_LLVM ON)
@@ -50,14 +50,14 @@ need to run `make cython` in the TVM source folder.
 If luckly you are using Ubuntu with `python-3.7`, `llvm-6.0` and `cuda-10.1` installed, you
 may use the pre-built library that is for evaluating this book:
 
-```{.python .input}
+```bash
 pip install https://tvm-repo.s3-us-west-2.amazonaws.com/tvm-0.6.dev0-cp37-cp37m-linux_x86_64.whl
 ```
 
 Finally, install MXNet's CUDA version if GPUs are available. Assume you are have
 CUDA 10.1 installed, then
 
-```{.python .input}
+```bash
 pip install mxnet-cu101
 ```
 
@@ -65,7 +65,7 @@ You can change the `101` to match your CUDA version.
 
 Once all packages are installed, we now open the Jupyter notebook by
 
-```{.python .input}
+```bash
 jupyter notebook
 ```
 
@@ -79,7 +79,7 @@ We save reusable code blocks in the `d2ltvm` package by adding the comment `# Sa
 d2ltvm package.` before the code block. For example, the following is the
 libraries imported by `d2ltvm`.
 
-```{.python .input}
+```python
 # Save to the d2ltvm package.
 import tvm
 import time
