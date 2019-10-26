@@ -12,7 +12,7 @@ import numpy as np
 import timeit
 import tvm
 
-target = 'llvm -mcpu=core-avx2'
+target = 'llvm -mcpu=skylake-avx512'
 ```
 
 As we did in :numref:`ch_vector_add_cpu`, we first define a function to measure NumPy performance as our baseline.

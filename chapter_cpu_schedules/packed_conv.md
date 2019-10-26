@@ -1,4 +1,4 @@
-# Packed Convolution 
+# Packed Convolution
 :label:`ch_packed_conv_cpu`
 
 We observed in :numref:`ch_conv_cpu` that the performance degrades when increasing the channel size for the convolution operator. In this chapter, we will consider to tile the channel axes and pack the data to improve the its efficiency.
@@ -8,12 +8,12 @@ import d2ltvm
 import numpy as np
 import tvm
 
-target = 'llvm -mcpu=core-avx2'
+target = 'llvm -mcpu=skylake-avx512'
 ```
 
 ## Packing Data and Weight
 
-In last chapter, we first split the weight and height axes and then move the inner axes as the last dimensions during computing. It's the same idea to tile the channels. But we do one additional step to actual move the data in the inner channel loop to the last dimension. So we pay the data movement cost once, while improve the data accessing performance later. 
+In last chapter, we first split the weight and height axes and then move the inner axes as the last dimensions during computing. It's the same idea to tile the channels. But we do one additional step to actual move the data in the inner channel loop to the last dimension. So we pay the data movement cost once, while improve the data accessing performance later.
 
 The following codes split the channel dimension and move the data in NumPy.
 
@@ -31,7 +31,7 @@ Now let's implement the pack computation in TVM.
 ```{.python .input  n=13}
 def conv_pack(oc, ic, nh, nw, kh, kw, ph, pw, toc, tic):
     """Pack data and weight for convolution
-    
+
     oc, ic : output and input channels.
     nh, nw : input width and height
     kh, kw : kernel width and height
@@ -48,7 +48,7 @@ def conv_pack(oc, ic, nh, nw, kh, kw, ph, pw, toc, tic):
         lambda ic_out, x, y, ic_in: PaddedX[ic_out*tic + ic_in, x, y],
         name='PackedX')
     PackedK = tvm.compute(
-        (oc//toc, ic//tic, nh, nw, tic, toc), 
+        (oc//toc, ic//tic, nh, nw, tic, toc),
         lambda oc_out, ic_out, x, y, ic_in, oc_in: K[
             oc_out*toc + oc_in, ic_out*tic + ic_in, x, y],
         name='PackedK')
@@ -72,7 +72,7 @@ Since we changed the data layout, we need to re-implement the convolution comput
 ```{.python .input  n=15}
 def conv(oc, ic, nh, nw, kh, kw, ph, pw, sh, sw, toc, tic):
     """2-D conv
-    
+
     oc, ic : output and input channels.
     h, w : input width and height
     kh, kw : kernel width and height
@@ -94,12 +94,12 @@ def conv(oc, ic, nh, nw, kh, kw, ph, pw, sh, sw, toc, tic):
     PackedY = tvm.compute(
         (oc//toc, oh, ow, toc),
         lambda oc_out, x, y, oc_in: tvm.sum(
-            PackedX[ric_out, x*sh+rkh, y*sw+rkw, ric_in] * 
-            PackedK[oc_out, ric_out, rkh, rkw, ric_in, oc_in], 
+            PackedX[ric_out, x*sh+rkh, y*sw+rkw, ric_in] *
+            PackedK[oc_out, ric_out, rkh, rkw, ric_in, oc_in],
             axis=[ric_out, rkh, rkw, ric_in]), name='Y')
     # Unpack the result
-    Y = tvm.compute((oc, oh, ow), 
-                    lambda oc, x, y: PackedY[oc//toc, x, y, oc%toc], 
+    Y = tvm.compute((oc, oh, ow),
+                    lambda oc, x, y: PackedY[oc//toc, x, y, oc%toc],
                     name='Y')
     return X, K, Y, PaddedX, PackedX, PackedK, PackedY
 ```
@@ -123,17 +123,17 @@ d2ltvm.conv_mxnet(data, weight, bias, out_mx, k, p, s)
 np.testing.assert_allclose(out_mx[0].asnumpy(), out.asnumpy(), atol=1e-5)
 ```
 
-## Schedule 
+## Schedule
 
-The optimization strategy here is similar to :numref:`ch_conv_cpu`. The major differences are 
+The optimization strategy here is similar to :numref:`ch_conv_cpu`. The major differences are
 
 1. the innermost axis is the inner axis split from the output channel because the elements have already sit on the last dimension after packing.
-2. We only split the width dimension instead of both width and height dimensions. 
+2. We only split the width dimension instead of both width and height dimensions.
 3. We need to optimize the packing and unpacking computations as well.
 
 ```{.python .input  n=18}
 # tiling sizes for output channel, input channel, and width
-toc, tic, tw = 16, 16, 4  
+toc, tic, tw = 16, 16, 4
 
 def cached_block(oc, ic, n, k, p, s):
     X, K, Y, PaddedX, PackedX, PackedK, PackedY = conv(
@@ -144,7 +144,7 @@ def cached_block(oc, ic, n, k, p, s):
     oc_out, h, w, oc_in = s[PackedY].op.axis
     oc_out_h = s[PackedY].fuse(oc_out, h)
     s[PackedY].parallel(oc_out_h)
-    # Optimzie the computation of a cached output block 
+    # Optimzie the computation of a cached output block
     w_out, w_in = s[PackedY].split(w, factor=tw)  # Split the columns
     s[CachedY].compute_at(s[PackedY], w_out)
     _, _, cw, oc_in = CachedY.op.axis
@@ -167,7 +167,7 @@ def cached_block(oc, ic, n, k, p, s):
     return s, (X, K, Y)
 
 s, args = cached_block(32, 32, 64, 3, 1, 1)
-# Uncomment the following line to see the long 
+# Uncomment the following line to see the long
 # psuedo codes because of unrolling.
 # tvm.lower(s, args, simple_mode=True)
 ```
@@ -184,7 +184,7 @@ d2ltvm.plot_gflops(channels, [mxnet_gflops, tvm_gflops], ['mxnet', 'tvm'])
 
 ## Summary
 
-- We often split input and output channels to for better vectorization and pack data accordingly. 
+- We often split input and output channels to for better vectorization and pack data accordingly.
 
 ## Exercises
 

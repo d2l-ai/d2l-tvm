@@ -9,7 +9,7 @@ import tvm
 import numpy as np
 import d2ltvm
 
-target = 'llvm -mcpu=core-avx2'
+target = 'llvm -mcpu=skylake-avx512'
 ```
 
 Before we started, let's rerun the benchmark for NumPy as our baseline.

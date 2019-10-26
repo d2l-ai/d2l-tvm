@@ -35,15 +35,12 @@ Then compile `tvm` from source codes. TVM doesn't have a pip package because it
 highly depends on the libraries available on your system. Please follow the
 instructions  on
 [tvm.ai](https://docs.tvm.ai/install/from_source.html) to install tvm. The configration in `config.cmake` this
-book requires includes
+book requires at least
 
 ```bash
-set(USE_CUDA ON)
-set(USE_OPENCL ON)
 set(USE_LLVM ON)
 ```
-
-You can disable CUDA and OPENCL if no GPU is available on your machine. Also
+Also
 don't forget the enable `cython`, which accelerates the performance. You just
 need to run `make cython` in the TVM source folder.
 

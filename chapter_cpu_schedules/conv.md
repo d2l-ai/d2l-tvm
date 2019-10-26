@@ -11,7 +11,7 @@ import numpy as np
 import timeit
 import tvm
 
-target = 'llvm -mcpu=core-avx2'
+target = 'llvm -mcpu=skylake-avx512'
 ```
 
 Let's first define our performance baseline, which is the convolution operator provided by MXNet. To simplify the measurement, we use the same input and output channels, and square input and kernel tensors. The padding will be `(kernel - 1) // 2` so that the output will have the same width and height as the input, and the stride will be 1.

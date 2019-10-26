@@ -38,11 +38,11 @@ def plot(X, Y, xlabel=None, ylabel=None, legend=[], xlim=None,
     axes.set_ylim(ylim)
     if legend: axes.legend(legend)
     axes.grid()
-    
+
 # Save to the d2ltvm package
 def plot_gflops(sizes, gflops, legend):
-    d2ltvm.plot(sizes, gflops, xlabel='Size', ylabel='GFLOPS', 
-             xscale='log', yscale='log', 
+    d2ltvm.plot(sizes, gflops, xlabel='Size', ylabel='GFLOPS',
+             xscale='log', yscale='log',
              legend=legend, fmts=['--']*(len(gflops)-1)+['-'])
 ```
 
@@ -93,10 +93,10 @@ s, args = default(64)
 print(tvm.lower(s, args, simple_mode=True))
 ```
 
-Remember in :numref:`ch_cpu_arch` we found our CPU supports AVX2, we pass `-mcpu=core-avx2` to LLVM so that it can generate AVX2 instructions if possible. In the following codes, we print a few lines of generated LLVM codes.
+Remember in :numref:`ch_cpu_arch` we found our CPU supports AVX512, we pass `-mcpu=skylake-avx512` to LLVM so that it can generate AVX2 instructions if possible. In the following codes, we print a few lines of generated LLVM codes.
 
 ```{.python .input  n=28}
-target = 'llvm -mcpu=core-avx2'
+target = 'llvm -mcpu=skylake-avx512'
 mod = tvm.build(s, args, target)
 print(mod.get_source()[:500])
 ```
@@ -134,9 +134,9 @@ plot_gflops(sizes, [np_gflops, default_gflops, parallel_gflops],
 
 Comparing the results we obtained before, parallelization significantly improves the performance when the workloads are large, e.g. vector lengths beyond $10^4$. Though the parallelization overhead impact the performance for small workloads, where single thread is even faster.
 
-## Vectorization 
+## Vectorization
 
-A single core may have SIMD units to run multiple arithmetic operations at the same time as we saw in :numref:`ch_cpu_arch`. While one iteration in the above scheduling only has a single add operation. We can explicitly allocate more operation within an iteration, and ask the compiler to use SIMD instructions for them. 
+A single core may have SIMD units to run multiple arithmetic operations at the same time as we saw in :numref:`ch_cpu_arch`. While one iteration in the above scheduling only has a single add operation. We can explicitly allocate more operation within an iteration, and ask the compiler to use SIMD instructions for them.
 
 The way to do it is first splitting the single for-loop into two loops. The inner loop consists `factor` original iterations that will be executed in a single core with SIMD units. And iterations in the outer loop still run in parallel.
 
@@ -145,7 +145,7 @@ def vectorized(n):
     s, (A, B, C) = default(n)
     outer, inner = s[C].split(C.op.axis[0], factor=8)
     s[C].parallel(outer)
-    s[C].vectorize(inner)    
+    s[C].vectorize(inner)
     return s, (A, B, C)
 
 s, args = vectorized(64)
@@ -160,7 +160,7 @@ plot_gflops(sizes, [np_gflops, default_gflops, parallel_gflops, vectorized_gflop
      ['numpy', 'default', 'parallel', 'vectorized'])
 ```
 
-The performance of the vectorized version is almost as the plain parallelization version. It's partially because the vector addition is bottlenecked by memory bandwidth instead of computation, while SIMD only helps the latter. We will see it helps more on computation intensive workloads such as matrix multiplication later. 
+The performance of the vectorized version is almost as the plain parallelization version. It's partially because the vector addition is bottlenecked by memory bandwidth instead of computation, while SIMD only helps the latter. We will see it helps more on computation intensive workloads such as matrix multiplication later.
 
 ## Summary
 
