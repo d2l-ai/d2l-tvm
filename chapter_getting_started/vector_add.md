@@ -3,6 +3,8 @@
 
 Now you have installed all libraries, let's write our first program: summing two vectors `a` and `b`. It's straightforward in NumPy, we can do it by `c = a + b`.
 
+## Implemeting with NumPy
+
 ```{.python .input  n=1}
 import numpy as np
 
@@ -45,7 +47,7 @@ def get_abc(shape, constructor=None):
 
 Note that we fixed the random seed so that we will always get the same results to simplify the comparison between NumPy, TVM and others. In addition, it accepts an optional `constructor` to  convert the data into a different format. 
 
-## Defining the Computation
+## Defining the TVM Computation
 
 Now let's implement `vector_add` in TVM. The TVM implementation differs above in two ways:
 
@@ -56,7 +58,7 @@ In the following program, we first declare the placeholders `A` and `B` for both
 
 Next we define how the output `C` is computed by `tvm.compute`. It accepts two arguments, the output shape, and a function to compute each element by giving its index. Since the output is a vector, its element by be indexed by a single integer. There the lambda function accepts a single argument `i`, and return `c[i]`, which is identical to `c[i] = a[i] + b[i]` defined in `vector_add`. One difference is that we didn't write the for-loop, which will be filled by TVM later.
 
-```{.python .input  n=4}
+```{.python .input  n=26}
 import tvm
 
 # Save to the d2ltvm package.
@@ -68,36 +70,62 @@ def vector_add(n):
     return A, B, C
 
 A, B, C = vector_add(n)
-type(C)
+type(A), type(C)
 ```
 
-We can see that `C` is again a `Tensor` object. The operator, i.e. how `C` is computed, can be accessed by `C.op`.
+We can see that all `A`, `B`, and `C` are  `Tensor` objects. It can be viewed as a symbolic version of NumPy's ndarray. We can access its attributes such as data type and shape. But it doesn't contain the data elements right now.
+
+```{.python .input  n=32}
+(A.dtype, A.shape), (C.dtype, C.shape)
+```
+
+The operation that generats the tensor object can be accessed by `A.op`.
+
+```{.python .input  n=54}
+type(A.op), type(C.op)
+```
+
+We can see that the types of the operations for `A` and `C` are different, but they share the same base class `Operation`, which represents an operation that generats a tensor object.
+
+```{.python .input  n=44}
+A.op.__class__.__bases__[0]
+```
 
 ## Creating a Schedule
 
-To run the computation, we need to specify how to execute the program, for example, the order to access data and how to do multi-threading. Such an execution plan is called a schedule. A schedule often doesn't not change the results, but a good schedule fully utilizes the machine resources to achieve high performance.
+To run the computation, we need to specify how to execute the program., for example, the order to access data and how to do multi-threading. Such an execution plan is called a schedule. Since `C` is the output tensor. Let's create a default schedule on its operator and print the pseudo codes.
 
-Let's create a default schedule on the operator and print the pseudo codes.
-
-```{.python .input  n=5}
+```{.python .input  n=48}
 s = tvm.create_schedule(C.op)
+```
+
+A schedule consists of several stages. Each stage corresponds to an operation to describe how it is scheduled。We can access a particular stage by either `s[C]` or `s[C.op]`.
+
+```{.python .input}
+type(s), type(s[C])
+```
+
+Later on we will see how to change the execution plan to better utilize the hardware resources to improve its efficiency. Here let's see the default execution plan by printing the C-like pseudo codes.
+
+```{.python .input}
 tvm.lower(s, [A, B, C], simple_mode=True)
 ```
 
-As can be seen, the pseudo codes are C-like. TVM adds proper for-loops according to the output shape. In overall, it quite similar to the preview function `vector_add`.
+The `lower` method accepts the schedule and input and output tensors. The `simple_mode=True` will print the program. 
+Note that the program has added proper for-loops according to the output shape. In overall, it quite similar to the preview function `vector_add`.
 
-An efficient schedule is often closely related to the hardware we are using. We will explore various options in :numref:`ch_schedule` later.
+Now you see that TVM separate the computation and the schedule. The idea here is that the computation will define how the results are computed. While an efficient schedule are often hardware dependent, but changing a schedule will not impact the correctness. 
 
 ## Compilation and Execution
 
-Once both computation and schedule are defined, we can compile them into an executable module with `tvm.build`. We must specify two arguments, the schedule, and all and  We can specify various targets such as GPU. Here we just use the default CPU target.
+Once both computation and schedule are defined, we can compile them into an executable module with `tvm.build`. It accepts the same argument as `tvm.lower`. In fact, it first calls `tvm.lower` to generate the program and then compiles to machine codes. 
 
 ```{.python .input  n=6}
 mod = tvm.build(s, [A, B, C])
 type(mod)
 ```
 
-The compiled module accepts three arguments, `A`, `B` and `C`. All of them need to be a `tvm.ndarray.NDArray` object. The easiest way is creating a NumPy ndarray and then convert into TVM ndarray by `tvm.nd.array`. We can convert it back to NumPy by the `asnumpy` method.
+It returns an executable module object. Now we can feed data for `A`, `B` and `C` to run it. The tensor data must be `tvm.ndarray.NDArray` object. The easiest way is creating NumPy ndarray objects first and then convert into TVM ndarray by `tvm.nd.array`. We can convert them back to NumPy by the `asnumpy` method.
 
 ```{.python .input  n=7}
 x = np.ones(2)
@@ -105,17 +133,17 @@ y = tvm.nd.array(x)
 type(y), y.asnumpy()
 ```
 
-Now let's construct the same `a` and `b`, but returns them as TVM ndarrays.
+Now let's construct data and return them as TVM ndarrays.
 
 ```{.python .input  n=8}
-a, b, d = get_abc(100, tvm.nd.array)
+a, b, c = get_abc(100, tvm.nd.array)
 ```
 
-Do the computation with `tvm_vector_add`, the result `d` should be equal to `c` that is computed through NumPy.
+Do the computation, and verify  the results.
 
 ```{.python .input  n=9}
-mod(a, b, d)
-np.testing.assert_array_equal(c, d.asnumpy())
+mod(a, b, c)
+np.testing.assert_array_equal(a.asnumpy() + b.asnumpy(), c.asnumpy())
 ```
 
 ## Argument Constraints
