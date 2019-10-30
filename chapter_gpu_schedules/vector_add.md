@@ -48,12 +48,12 @@ During execution, all threads in a single block will be executed in the same cor
 Analogy to CPUs, a thread block is the workload we run in parallel over CPU threads, while a thread is workload that could be vectorized. Remember in the last part of :numref:`ch_vector_add_cpu` we split the for-loop for vector addition for parallelization and vectorization separately, we can do it similarly for GPUs programming.
 
 ```{.python .input  n=17}
-factor = 64
+nt = 64  # number of threads in a block
 
 def parallel(n):
     A, B, C = d2ltvm.vector_add(n)
     s = tvm.create_schedule(C.op)
-    bx, tx = s[C].split(C.op.axis[0], factor=factor)
+    bx, tx = s[C].split(C.op.axis[0], factor=nt)
     s[C].bind(bx, tvm.thread_axis("blockIdx.x"))
     s[C].bind(tx, tvm.thread_axis("threadIdx.x"))
     return s, (A, B, C)
@@ -62,7 +62,11 @@ s, args = parallel(256)
 tvm.lower(s, args, simple_mode=True)
 ```
 
-Compared to `vectorized` defined in :numref:`ch_vector_add_cpu`, there are two major difference. One is that we bind axes into block and thread indexing axes instead of call `parallel` and `vectorize`. The other one is that the pseudo codes only have the kernel, instead of the whole program with for-loops. The indexing is obtained by the 1-D indexing scheme we shown before. 
+Compared to `vectorized` defined in :numref:`ch_vector_add_cpu`, there are two major difference. 
+
+One is that we bind axes into block and thread indexing axes instead of call `parallel` and `vectorize`. The inner axis length is 64, specified by `nt`. Binding the `threadIdx.x` thread axis on it means we will create 64 threads in a thread block. Similarly, binding the `blockIdx.x` thread axis on the outer axis leads to `n/nt` thread blocks. 
+
+The other one is that the pseudo codes only have the kernel, instead of the whole program with for-loops. The indexing is obtained by the 1-D indexing scheme we shown before. 
 
 If you wrote CUDA programs before, you may want to check the generated CUDA program. Note that the target is set to be `cuda` during compiling.
 
@@ -82,21 +86,13 @@ tvm.nd.array(np.zeros((3,3)), ctx)
 Remember that the `bench_vector_add_tvm` function already takes care of the context. Now let's benchmark the above schedule against MXNet.
 
 ```{.python .input  n=16}
-cuda_gflops = d2ltvm.bench_vector_add_tvm(parallel, sizes, 'cuda')
-d2ltvm.plot_gflops(sizes, [mx_gflops, cuda_gflops], ['MXNet', 'TVM'])
+tvm_gflops = d2ltvm.bench_vector_add_tvm(parallel, sizes, 'cuda')
+d2ltvm.plot_gflops(sizes, [mx_gflops, tvm_gflops], ['MXNet', 'TVM'])
 ```
 
-We can see that TVM is faster for small workloads. That is because TVM uses `cython` for the foreign function interface, which is significantly faster than the `ctypes` used by MXNet. It's interesting to see that the simple schedule we had performs worse compared to MXNet for large vectors. It could due to the number of threads in each thread-block, which is 64, is too small to use all SIMD units in a core. Let's increase it to $256$.
+We can see that TVM is faster for small workloads. That is because TVM uses `cython` for the foreign function interface, which is significantly faster than the `ctypes` used by MXNet. 
 
-```{.python .input  n=20}
-factor = 256
-cuda_gflops_2 = d2ltvm.bench_vector_add_tvm(parallel, sizes, 'cuda')
-d2ltvm.plot_gflops(sizes, [mx_gflops, cuda_gflops, cuda_gflops_2], 
-                   ['MXNet', 'TVM, block=64', 'TVM block=256'])
-```
-
-Now we can see performances are matched.
-
+Note that if you are running the above code on GPUs with faster memory, such as V100, you may find TVM performs worse compared to MXNet for large vectors. You can improve it by increasing the number of threads `nt`. 
 
 ## Summary
 
