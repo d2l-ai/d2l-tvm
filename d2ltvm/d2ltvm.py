@@ -5,6 +5,16 @@
 import sys
 d2ltvm = sys.modules[__name__]
 
+# Defined in file: ./chapter_getting_started/install.md
+import tvm
+import time
+import timeit
+import numpy as np
+from matplotlib import pyplot as plt
+from IPython import display
+import mxnet as mx
+
+
 # Defined in file: ./chapter_getting_started/vector_add.md
 def get_abc(shape, constructor=None):
     """Return random a, b and empty c with the same shape.  
@@ -268,5 +278,21 @@ def bench_conv_tvm(func, sizes, target):
         times.append(d2ltvm.bench_workload(workload))
         gflops.append(conv_gflop(*args))
     return np.array(gflops) / np.array(times)
+
+
+# Defined in file: ./chapter_gpu_schedules/matmul.md
+def matmul_timer_mxnet(n, ctx):
+    """The matrix multiplication timer for MXNet
+
+    n : width and height of inptus 
+    ctx : device
+    """
+    timer = timeit.Timer(
+        setup='import d2ltvm\n'
+        'import mxnet as mx\n'
+        'a, b, c, = d2ltvm.get_abc((%d, %d), lambda x: mx.nd.array(x, ctx=mx.%s()))\n'
+        'mx.nd.waitall()' % (n, n, ctx),
+        stmt='mx.nd.dot(a, b, out=c); c.wait_to_read()')
+    return timer.timeit
 
 

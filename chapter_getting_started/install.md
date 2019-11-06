@@ -83,7 +83,7 @@ We save reusable code blocks in the `d2ltvm` package by adding the comment `# Sa
 d2ltvm package.` before the code block. For example, the following is the
 libraries imported by `d2ltvm`.
 
-```python
+```{.python .input  n=1}
 # Save to the d2ltvm package.
 import tvm
 import time
@@ -93,4 +93,3 @@ from matplotlib import pyplot as plt
 from IPython import display
 import mxnet as mx
 ```
-
