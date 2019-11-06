@@ -5,16 +5,6 @@
 import sys
 d2ltvm = sys.modules[__name__]
 
-# Defined in file: ./chapter_getting_started/install.md
-import tvm
-import time
-import timeit
-import numpy as np
-from matplotlib import pyplot as plt
-from IPython import display
-import mxnet as mx
-
-
 # Defined in file: ./chapter_getting_started/vector_add.md
 def get_abc(shape, constructor=None):
     """Return random a, b and empty c with the same shape.  
@@ -158,7 +148,7 @@ def bench_workload(workload):
 # Defined in file: ./chapter_cpu_schedules/vector_add.md
 def plot(X, Y, xlabel=None, ylabel=None, legend=[], xlim=None,
          ylim=None, xscale='linear', yscale='linear', fmts=None,
-         figsize=(6, 4)):
+         figsize=(4.5, 3)):
     """Plot multiple lines"""
     display.set_matplotlib_formats('svg')
     plt.rcParams['figure.figsize'] = figsize
@@ -176,13 +166,12 @@ def plot(X, Y, xlabel=None, ylabel=None, legend=[], xlim=None,
     axes.set_ylim(ylim)
     if legend: axes.legend(legend)
     axes.grid()
-    
 
 
 # Defined in file: ./chapter_cpu_schedules/vector_add.md
 def plot_gflops(sizes, gflops, legend):
-    d2ltvm.plot(sizes, gflops, xlabel='Size', ylabel='GFLOPS', 
-             xscale='log', yscale='log', 
+    d2ltvm.plot(sizes, gflops, xlabel='Size', ylabel='GFLOPS',
+             xscale='log', yscale='log',
              legend=legend, fmts=['--']*(len(gflops)-1)+['-'])
 
 
@@ -228,8 +217,8 @@ def bench_matmul_tvm(func, sizes, target):
 # Defined in file: ./chapter_cpu_schedules/conv.md
 def conv_gflop(oc, ic, n, k, p, s):
     """Compute the #floating points in a convolution.
-    
-    The arguments are output channels oc, input channels ic, input size n, 
+
+    The arguments are output channels oc, input channels ic, input size n,
     kernel size k, padding p and stride s.
     """
     on = d2ltvm.conv_out_size(n, k, p, s)
@@ -239,7 +228,7 @@ def conv_gflop(oc, ic, n, k, p, s):
 # Defined in file: ./chapter_cpu_schedules/conv.md
 def conv_timer_mxnet(c, n, k, ctx):
     """Benchmark convolution in MXNet
-    
+
     c : input, output channels
     n : input width and height
     k : kernel width and height
@@ -258,8 +247,8 @@ def conv_timer_mxnet(c, n, k, ctx):
 # Defined in file: ./chapter_cpu_schedules/conv.md
 def bench_conv_mxnet(sizes, ctx='cpu'):
     """Return the GFLOPs of MXNet convolution"""
-    return [conv_gflop(c, c, n, k, (k-1)//2, 1) / 
-            d2ltvm.bench_workload(conv_timer_mxnet(c, n, k, ctx)) 
+    return [conv_gflop(c, c, n, k, (k-1)//2, 1) /
+            d2ltvm.bench_workload(conv_timer_mxnet(c, n, k, ctx))
             for c, n, k in sizes]
 
 
@@ -273,7 +262,7 @@ def bench_conv_tvm(func, sizes, target):
         args = c, c, n, k, (k-1)//2, 1 # oc, ic, n, k, p, s
         s, (X, K, Y) = func(*args)
         mod = tvm.build(s, [X, K, Y], target)
-        ctx = tvm.context(target, 0)        
+        ctx = tvm.context(target, 0)
         x, k, y = d2ltvm.get_conv_data(
             *args, lambda x: tvm.nd.array(x, ctx=ctx))
         times.append(d2ltvm.bench_workload(workload))

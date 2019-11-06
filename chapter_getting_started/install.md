@@ -17,11 +17,12 @@ wget http://tvm.d2l.ai/d2l-tvm.zip
 unzip d2l-tvm.zip -d d2l-tvm
 ```
 
+
 ## Installing Running Environment
 
 If you have both Python 3.5 or later and pip installed, the easiest way to
 install the running environment is through pip. There packages are needed,
-`d2ltvm` for all dependencies such as Jupyter and saved code blocks, and `tvm`
+`d2ltvm` for all dependencies such as Jupyter and saved code blocks, and `tvm` :cite:`Chen.Moreau.Jiang.ea.2018`
 for the deep learning compiler we are using. Some chapters use `mxnet` as
 a baseline.
 
@@ -30,6 +31,7 @@ First install `d2ltvm`:
 ```bash
 pip install git+https://github.com/d2l-ai/d2l-tvm
 ```
+
 
 Then compile `tvm` from source codes. TVM doesn't have a pip package because it
 highly depends on the libraries available on your system. Please follow the
@@ -40,6 +42,8 @@ book requires at least
 ```bash
 set(USE_LLVM ON)
 ```
+
+
 Also
 don't forget the enable `cython`, which accelerates the performance. You just
 need to run `make cython` in the TVM source folder.
@@ -51,12 +55,14 @@ may use the pre-built library that is for evaluating this book:
 pip install https://tvm-repo.s3-us-west-2.amazonaws.com/tvm-0.6.dev0-cp37-cp37m-linux_x86_64.whl
 ```
 
-Finally, install MXNet's CUDA version if GPUs are available. Assume you are have
+
+Finally, install MXNet's CUDA version if GPUs are available :cite:`Chen.Li.Li.ea.2015`. Assume you are have
 CUDA 10.1 installed, then
 
 ```bash
 pip install mxnet-cu101
 ```
+
 
 You can change the `101` to match your CUDA version.
 
@@ -65,6 +71,7 @@ Once all packages are installed, we now open the Jupyter notebook by
 ```bash
 jupyter notebook
 ```
+
 
 At this point open http://localhost:8888 (which usually opens automatically) in the browser, then you can view and run the code in each section of the book.
 
@@ -86,3 +93,4 @@ from matplotlib import pyplot as plt
 from IPython import display
 import mxnet as mx
 ```
+

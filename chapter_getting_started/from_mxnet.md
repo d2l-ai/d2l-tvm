@@ -11,11 +11,11 @@ import tvm
 from tvm import relay
 ```
 
-Here three additional modules are imported than the previous chapter. We will use `PIL` to read images, `MXNet` to obtain pre-trained neural networks, and the `relay` module in TVM to convert and optimize a neural network. 
+Here three additional modules are imported than the previous chapter. We will use `PIL` to read images, `MXNet` to obtain pre-trained neural networks, and the `relay` module :cite:`Roesch.Lyubomirsky.Kirisame.ea.2019` in TVM to convert and optimize a neural network. 
 
 ## Obtaining Pre-trained Models
 
-A pre-trained model means a neural network with parameters trained on a data set. Here we download and load a ResNet-18 model by specifying `pretrained=True` from MXNet's model zoo. If you want to know details about this model, please refer to [Chapter 7.6 in D2L](http://d2l.ai/chapter_convolutional-modern/resnet.html). You can find more models on the [MXNet model zoo](https://mxnet.apache.org/api/python/docs/api/gluon/model_zoo/index.html) page, or refer to [GluonCV](https://gluon-cv.mxnet.io/model_zoo/index.html) and [GluonNLP](http://gluon-nlp.mxnet.io/model_zoo/index.html) for more computer vision and natural language models.
+A pre-trained model means a neural network with parameters trained on a data set. Here we download and load a ResNet-18 model by specifying `pretrained=True` from MXNet's model zoo :cite:`Chen.Li.Li.ea.2015`. If you want to know details about this model, please refer to [Chapter 7.6 in D2L](http://d2l.ai/chapter_convolutional-modern/resnet.html). You can find more models on the [MXNet model zoo](https://mxnet.apache.org/api/python/docs/api/gluon/model_zoo/index.html) page, or refer to [GluonCV](https://gluon-cv.mxnet.io/model_zoo/index.html) and [GluonNLP](http://gluon-nlp.mxnet.io/model_zoo/index.html) for more computer vision and natural language models.
 
 ```{.python .input  n=2}
 model = mx.gluon.model_zoo.vision.resnet18_v2(pretrained=True)

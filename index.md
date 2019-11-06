@@ -23,11 +23,6 @@ program into various environment such as mobile phones.
 :maxdepth: 2
 :numbered:
 
-
-
-
-
-
 chapter_getting_started/index
 chapter_expressions/index
 chapter_common_operators/index
@@ -35,4 +30,11 @@ chapter_cpu_schedules/index
 chapter_gpu_schedules/index
 chapter_neural_networks/index
 chapter_deployment/index
+```
+
+
+```toc
+:maxdepth: 1
+
+chapter_references/zreferences
 ```

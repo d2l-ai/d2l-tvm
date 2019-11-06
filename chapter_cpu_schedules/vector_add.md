@@ -16,11 +16,11 @@ import tvm
 
 We first define reusable plot functions to draw multiple lines, which generalize the plot function defined in :numref:`ch_call_overhead`.
 
-```{.python .input  n=10}
+```{.python .input  n=1}
 # Save to the d2ltvm package.
 def plot(X, Y, xlabel=None, ylabel=None, legend=[], xlim=None,
          ylim=None, xscale='linear', yscale='linear', fmts=None,
-         figsize=(6, 4)):
+         figsize=(4.5, 3)):
     """Plot multiple lines"""
     display.set_matplotlib_formats('svg')
     plt.rcParams['figure.figsize'] = figsize
