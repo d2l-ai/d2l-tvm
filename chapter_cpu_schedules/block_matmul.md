@@ -36,7 +36,7 @@ This computation is also illustrated in :numref:`fig_matmul_block`.
 ![Blocked tiling for matrix multiplication.](../img/matmul_block.svg)
 :label:`fig_matmul_block`
 
-In each submatrix computation, we need to write a `(tx, ty)` shape matrix, and reach two matrices with shapes `(tx, tk)` and `(tk, ty)`. We can compute such a computation in a single CPU core. If we properly choose the tiling sizes `tx`, `ty` and `tk` to fit into the L1 cache, which is 32KB for our CPU (refer to :label:`ch_cpu_arch`). The reduced cache miss then should improve the performance.
+In each submatrix computation, we need to write a `(tx, ty)` shape matrix, and reach two matrices with shapes `(tx, tk)` and `(tk, ty)`. We can compute such a computation in a single CPU core. If we properly choose the tiling sizes `tx`, `ty` and `tk` to fit into the L1 cache, which is 32KB for our CPU (refer to :numref:`ch_cpu_arch`). The reduced cache miss then should improve the performance.
 
 Let's implement this idea. In the following codes, we choose `tx=ty=32` so that the submatrix to write has a size of `32*32*4=4KB`. The total size of the two submatrices to read is `2*32*4*4=1KB`. All of them can fit into our L1 cache easily. The tiling is implemented by the `split` method.
 
