@@ -119,7 +119,7 @@ Note that the program has added proper for-loops according to the output shape. 
 Now you see that TVM separates the computation and the schedule. The computation defines how the results are computed, 
 which will not change no matter on what hardware platform you run the program. 
 On the other hand, an efficient schedule are often hardware dependent, but changing a schedule will not impact the correctness.
-The idea of separating computation from schedule is inherited by TVM from Halide :cite:`Ragan-Kelley.Barnes,Adams.ea.2013`. 
+The idea of separating computation from schedule is inherited by TVM from Halide :cite:`Ragan-Kelley.Barnes.Adams.ea.2013`. 
 
 ## Compilation and Execution
 
