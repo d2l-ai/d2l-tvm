@@ -21,7 +21,8 @@ unzip d2l-tvm.zip -d d2l-tvm
 ## Installing Running Environment
 
 If you have both `Python 3.5` or later and `pip` installed, the easiest way to
-install the running environment is through `pip`. The reqiured packages are,
+install the running environment is through `pip`. The reqiured packages are
+
 - `d2ltvm` for all dependencies such as Jupyter and saved code blocks
 - `tvm` :cite:`Chen.Moreau.Jiang.ea.2018` for the deep learning compiler we are using
 - `mxnet` as the baseline in some chapters
