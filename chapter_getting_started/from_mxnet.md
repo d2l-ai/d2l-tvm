@@ -11,7 +11,8 @@ import tvm
 from tvm import relay
 ```
 
-Here three additional modules are imported than the previous chapter. We will use `PIL` to read images, `MXNet` to obtain pre-trained neural networks, and the `relay` module :cite:`Roesch.Lyubomirsky.Kirisame.ea.2019` in TVM to convert and optimize a neural network. 
+Here three additional modules are imported compared to the previous chapter. We will use `PIL` to read images, `mxnet` to obtain pre-trained neural networks, and the `relay` module :cite:`Roesch.Lyubomirsky.Kirisame.ea.2019` in TVM to convert and optimize a neural network.
+`Relay` is the high-level intermediate representation (IR) in TVM to represent a neural network.
 
 ## Obtaining Pre-trained Models
 
@@ -22,7 +23,7 @@ model = mx.gluon.model_zoo.vision.resnet18_v2(pretrained=True)
 len(model.features), model.output
 ```
 
-The loaded model is trained on the Imagenet 1K dataset, which contains around 1 million natural object images among 1000 classes. The model has two parts, the main body part `model.features` contains 13 layers, and the output layer is a dense layer with 1000 outputs. 
+The loaded model is trained on the Imagenet 1K dataset, which contains around 1 million natural object images among 1000 classes. The model has two parts, the main body part `model.features` contains 13 blocks, and the output layer is a dense layer with 1000 outputs. 
 
 The following code block loads the text labels for each class in the Imagenet dataset.
 
@@ -33,14 +34,14 @@ with open('../data/imagenet1k_labels.txt') as f:
 
 ## Pre-processing Data
 
-We first read a sample image. It is resized to the size, i.e. 224 px width and height, we used to train the neural network.
+We first read a sample image. It is resized to the size, i.e. 224 px width and height, which we used to train the neural network.
 
 ```{.python .input  n=4}
 image = Image.open('../data/cat.jpg').resize((224, 224))
 image
 ```
 
-According to the [model zoo page](https://mxnet.apache.org/api/python/docs/api/gluon/model_zoo/index.html). Image pixes are normalized on each color channel, and the data layout is `(batch, RGB channels, height and width)`. The following function transforms the input image to satisfies the requirement.
+According to the [model zoo page](https://mxnet.apache.org/api/python/docs/api/gluon/model_zoo/index.html). Image pixes are normalized on each color channel, and the data layout is `(batch, RGB channels, height, width)`. The following function transforms the input image to satisfy the requirement.
 
 ```{.python .input  n=5}
 # Save to the d2ltvm package
@@ -57,14 +58,17 @@ x.shape
 
 ## Compile Pre-trained Models
 
-To compile a model, we first convert the MXNet model into relay. In the `from_mxnet` function, we provide the model with the the input data shape. We could specify an undetermined shape, which is necessary for some neural networks. But a fixed shape often leads to a compact library and a better performance.
+To compile a model, we first express the MXNet model in Relay IR, which the `from_mxnet` method could help. 
+In the method, we provide the model with the input data shape. Some neural networks may require some dimension(s) of the data shape to be determined later. 
+Hoever, in ResNet model the data shape is fixed, which makes it easier for the compiler to acheive high performance. 
+We will mostly stick to fixed data shape in the book. We only touch the dynamic data shape (i.e. some dimension(s) to be determined in runtime) in very late chapters.
 
 ```{.python .input  n=6}
 relay_mod, relay_params = relay.frontend.from_mxnet(model, {'data': x.shape})
 type(relay_mod), type(relay_params)
 ```
 
-This function will return the program `relay_mod`, which is a relay module, and a dictionary of parameters `relay_params` that maps a string key to a TVM ndarray. Next, we compile them using the `llvm` backend, which is recommended for CPUs. [LLVM](https://en.wikipedia.org/wiki/LLVM) defines an intermediate representation that has been adopted by multiple programming languages. The LLVM compiler is then be able to compile the generated programs into machine codes. TVM generate LLVM codes for CPUs, and then invoke LLVM to compile to the machine codes. We have already used it to compile the vector addition operator in the last chapter, despite that we didn't explicitly specify it.  
+This method will return the program `relay_mod`, which is a `relay` module, and a dictionary of parameters `relay_params` that maps a string key to a TVM ndarray. Next, we lower the module to some lower-level IR which can be comsumed by `llvm` backend. [LLVM](https://en.wikipedia.org/wiki/LLVM) defines an IR that has been adopted by multiple programming languages. The LLVM compiler is then able to compile the generated programs into machine codes for CPUs. We have already used it to compile the vector addition operator in :numref:`ch_vector_add`, despite that we didn't explicitly specify it.  
 
 In addition, we set the optimization level to the highest level 3. You may get warning messages that not every operator is well optimized, you can ignore it for now. We will get back to it later.
 
@@ -74,17 +78,17 @@ with relay.build_config(opt_level=3):
     graph, mod, params = relay.build(relay_mod, target, params=relay_params)
 ```
 
-The compiled module has three parts: `graph` is a json string described the neural network, `mod` contains all compiled operators used to run the inference, and `params` is dictionary mapping parameter name to weights.
+The compiled module has three parts: `graph` is a json string described the neural network, `mod` is a library that contains all compiled operators used to run the inference, and `params` is a dictionary mapping parameter name to weights.
 
 ```{.python .input  n=8}
 type(graph), type(mod), type(params)
 ```
 
-You can see `mod` is a TVM module we already seen in :numref:`ch_vector_add`. 
+You can view `mod` as a TVM module we already seen in :numref:`ch_vector_add`. 
 
 ## Inference
 
-Now we can create a runtime to run the inference, namely the forward pass. Creating the runtime needs the program and library, with a device context that can be constructed from the target. The device is the CPU here. Next we specify the parameters with `set_input` and run the workload by giving the input data. Since this network has a single output layer, we can obtain it, a `(1, 1000)` shape matrix, by `get_output(0)`. The final output is a 1000-length NumPy vector.
+Now we can create a runtime to run the model inference, namely the forward pass of a neural network. Creating the runtime needs the neural network definition in json (i.e. `graph`) and the library that contains machine code of compiled operators (i.e. `mod`), with a device context that can be constructed from the target. The device is CPU here, specified by `llvm`. Next we load the parameters with `set_input` and run the workload by feeding the input data. Since this network has a single output layer, we can obtain it, a `(1, 1000)` shape matrix, by `get_output(0)`. The final output is a 1000-length NumPy vector.
 
 ```{.python .input  n=9}
 ctx = tvm.context(target)
@@ -104,7 +108,7 @@ labels[a[0]], labels[a[1]]
 
 ## Saving the Compiled Library
 
-We can save the output of `relay.build` in disk to reuse them later. The following codes block saves the json string, library, and parameters.
+We can save the output of `relay.build` in disk to reuse them later. The following code block saves the json string, library, and parameters.
 
 ```{.python .input  n=11}
 !rm -rf resnet18*
@@ -140,5 +144,5 @@ tvm.testing.assert_allclose(loaded_scores, scores)
 
 ## Summary
 
-- We can use the relay module to convert and compile a neural network.
+- We can use `relay` of TVM to convert and compile a neural network into a module for model inference.
 - We can save the compiled module into disk to facilitate future deployment.
