@@ -1,7 +1,8 @@
 # Conditional Expression: `if-then-else`
 :label:`ch_if_then_else`
 
-The `if-then-else` statement is supported trough `tvm.if_then_else`. In this chapter, we will use computing the lower triangle of an matrix as the example to introduce this expression.
+The `if-then-else` statement is supported through `tvm.if_then_else`. In this session, 
+we will introduce this expression using computing the lower triangle of an matrix as the example.
 
 ```{.python .input  n=1}
 import tvm
@@ -9,14 +10,14 @@ import numpy as np
 import d2ltvm
 ```
 
-In NumPy, we can use `np.tril` to obtain the lower triangle.
+In NumPy, we can easily use `np.tril` to obtain the lower triangle.
 
 ```{.python .input  n=2}
 a = np.arange(12, dtype='float32').reshape((3, 4))
 np.tril(a)
 ```
 
-Now let's implement it in TVM with `if_then_else`. It accepts three arguments, the first one is the condition, if true then returns the second argument, otherwise returns the third one.
+Now let's implement it in TVM with `if_then_else`. It accepts three arguments, the first one is the condition, if true returning the second argument, otherwise returning the third one.
 
 ```{.python .input  n=3}
 n, m = tvm.var('n'), tvm.var('m')
@@ -38,4 +39,4 @@ b
 
 ## Summary
 
-- We can use `tvm.if_then_else`  for the if-then-else statement.
+- We can use `tvm.if_then_else` for the if-then-else statement.
