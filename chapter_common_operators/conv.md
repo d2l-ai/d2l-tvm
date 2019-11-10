@@ -1,7 +1,7 @@
 # Convolution
 :label:`ch_conv`
 
-The convolution operator is the one of the most expensive but also widely used operators in neural networks. In this chapter, we will cover the operator with single input and output channels. Please refer to chapter [6.2](http://numpy.d2l.ai/chapter_convolutional-neural-networks/conv-layer.html), [6.3](http://numpy.d2l.ai/chapter_convolutional-neural-networks/padding-and-strides.html), and [6.4](http://numpy.d2l.ai/chapter_convolutional-neural-networks/channels.html) in D2L for more explanation about this operator.
+The convolution (*CONV*) operator is the one of the most expensive and popular operators in neural networks. In this session, we will cover the operator with single input and output channels. Please refer to chapter [6.2](http://numpy.d2l.ai/chapter_convolutional-neural-networks/conv-layer.html), [6.3](http://numpy.d2l.ai/chapter_convolutional-neural-networks/padding-and-strides.html), and [6.4](http://numpy.d2l.ai/chapter_convolutional-neural-networks/channels.html) in D2L for more explanation about this operator. Here we would not explain much about the convolution-related terms such as padding, channel, stride, convolution kernel, etc.
 
 ```{.python .input  n=1}
 import d2ltvm
@@ -11,12 +11,13 @@ import tvm
 
 ## Padding
 
-Let's first explain padding, which appends rows and columns with 0s. We already implemented it for 2-D matrices in :numref:`ch_if_then_else`, here we generalize it into general tenors. In the general case, we assume the last two dimensions are rows and columns, so 0s are only padded on these two dimensions. In particular, if the matrix height is $n_h$ and width is $n_w$, then we will pad $p_h$ rows with 0s on top and bottom, and $p_w$ columns with 0s on left and right to make its height and width to $n_h+2p_h$ and $n_w+2p_w$, respectively.
+As a prerequisite to convolution, let's first implement *padding*, which visually surrounds the targeting tensor with a "shell" surrounding it. The padding values are normally 0. Note that we briefly touched padding in last chapter when introducing `tvm.any`, which was a padding for a 2-D matrix.
+Here we generalize the padding to work for 2-D convolution on $n$-D tensors, which is usually used in the convolution operators of neural networks. In the general case, we assume the last two dimensions are rows and columns, 0s are only padded on these two dimensions. In particular, if the matrix height (i.e. number of rows) is $n_h$ and width (i.e. number of columns) is $n_w$, then we will pad $p_h$ rows with 0s on top and bottom, and $p_w$ columns with 0s on left and right to make its height and width to $n_h+2p_h$ and $n_w+2p_w$, respectively. We have mentioned it once at last chapter, but note that `*X` and `*i` in `tvm.compute` are used to represent general multi-dimensional tensors.
 
 ```{.python .input  n=53}
 # Save to the d2ltvm package.
 def padding(X, ph, pw):
-    """Pad X with 0s
+    """Pad X with 0s in 2-D
 
     ph, pw : height and width padding
     """
@@ -46,17 +47,17 @@ print(b)
 
 ## Convolution
 
-We consider the simpler single-channel convolution first. Given a $n_h\times n_w$ data matrix $X$, we first pad 0s into $(n_h+2p_h) \times (n_w+2p_w)$. If the kernel matrix $K$ has a size of $k_h\times k_w$, using a stride $s_h$ for height and $s_w$ for width, the output $Y = X \star K$ will have a shape
+We consider the simple single-channel convolution first. Given an $n_h\times n_w$ data matrix $X$, we first pad 0s into $(n_h+2p_h) \times (n_w+2p_w)$. If the kernel matrix $K$ has a size of $k_h\times k_w$, using a stride $s_h$ for height and $s_w$ for width, the output $Y = X \star K$ will have a shape
 
 $$ \lfloor (n_h-k_h+2p_h)/s_h+1\rfloor  \times \lfloor (n_w-k_w+2p_w)/s_w+1\rfloor.$$
 
-In addition, we can compute $Y_{x,y}$ by
+And the element of $Y$ can be computed $Y_{i,j}$ by
 
-$$ Y_{i,j} = \sum_{a=1}^{k_w}\sum_{b=1}^{k_h} X_{i s_w+a, j s_h+b} K_{a, b}$$
+$$ Y_{i,j} = \sum_{a=0}^{k_w-1}\sum_{b=0}^{k_h-1} X_{i s_w+a, j s_h+b} K_{a, b}$$
 
 An example is illustrated in :numref:`fig_conv_strides`.
 
-![The 2D convolution with paddings for 2, and strides of 3 and 2 for height and width respectively. The shaded portions are the output element and the input and core array elements used in its computation: $0\times0+0\times1+1\times2+2\times3=8$, $0\times0+6\times1+0\times2+0\times3=6$. ](../img/conv-stride.svg)
+![The 2-D convolution with paddings for 1, and strides of 3 and 2 for height and width respectively. The shaded portions depicts the two output elements, with the corresponding input and kernel array elements used to calculate them: $0\times0+0\times1+1\times2+2\times3=8$, $0\times0+6\times1+0\times2+0\times3=6$. ](../img/conv-stride.svg)
 :label:`fig_conv_strides`
 
 In the more general multiple input and output case, assume we have a $c_i \times n_h \times n_w$ input tensor $X$, and a $c_o\times c_i\times k_h\times k_w$ kernel weight $K$, here $c_i$ and $c_o$ are the number of input channels and output channels, respectively. Then the output $Y$ has a shape
