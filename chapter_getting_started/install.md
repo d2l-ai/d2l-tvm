@@ -86,7 +86,7 @@ At this point open http://localhost:8888 (which usually opens automatically) in 
 :label:`ch_code`
 
 Throughout the book, we save reusable code blocks in the `d2ltvm` package by adding the comment: "`# Save to the
-d2ltvm package.`" before the code block. For example, the following code snippet shows the 
+d2ltvm package.`" before the code block. For example, the following code snippet shows the
 libraries imported by `d2ltvm`.
 
 ```{.python .input  n=1}
@@ -97,5 +97,8 @@ import timeit
 import numpy as np
 from matplotlib import pyplot as plt
 from IPython import display
-import mxnet as mx
+try:
+  import mxnet as mx
+except:
+  pass
 ```

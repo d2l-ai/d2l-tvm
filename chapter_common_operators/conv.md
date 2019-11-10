@@ -146,7 +146,8 @@ Since NumPy only have a convolution for vectors, we use MXNet's convolution oper
 import mxnet as mx
 
 # Save to the d2ltvm package.
-def get_conv_data_mxnet(oc, ic, n, k, p, s, ctx=mx.cpu()):
+def get_conv_data_mxnet(oc, ic, n, k, p, s, ctx='cpu'):
+    ctx = getattr(mx, ctx)()
     data, weight, out = get_conv_data(oc, ic, n, k, p, s,
                                       lambda x: mx.nd.array(x, ctx=ctx))
     data, out = data.expand_dims(axis=0), out.expand_dims(axis=0)

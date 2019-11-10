@@ -12,14 +12,17 @@ import timeit
 import numpy as np
 from matplotlib import pyplot as plt
 from IPython import display
-import mxnet as mx
+try:
+  import mxnet as mx
+except:
+  pass
 
 
 # Defined in file: ./chapter_getting_started/vector_add.md
 def get_abc(shape, constructor=None):
-    """Return random a, b and empty c with the same shape.  
+    """Return random a, b and empty c with the same shape.
     """
-    np.random.seed(0) 
+    np.random.seed(0)
     a = np.random.normal(size=shape).astype(np.float32)
     b = np.random.normal(size=shape).astype(np.float32)
     c = np.empty_like(a)
@@ -127,7 +130,8 @@ def get_conv_data(oc, ic, n, k, p=0, s=1, generator=None):
 
 
 # Defined in file: ./chapter_common_operators/conv.md
-def get_conv_data_mxnet(oc, ic, n, k, p, s, ctx=mx.cpu()):
+def get_conv_data_mxnet(oc, ic, n, k, p, s, ctx='cpu'):
+    ctx = getattr(mx, ctx)()
     data, weight, out = get_conv_data(oc, ic, n, k, p, s,
                                       lambda x: mx.nd.array(x, ctx=ctx))
     data, out = data.expand_dims(axis=0), out.expand_dims(axis=0)
@@ -144,7 +148,7 @@ def conv_mxnet(data, weight, bias, out, k, p, s):
 # Defined in file: ./chapter_cpu_schedules/call_overhead.md
 def bench_workload(workload):
     """Benchmarka a workload
-    
+
     workload - must accept a num_repeat argument and return the total runtime
     """
     workload(1)  # warmup
@@ -284,7 +288,7 @@ def bench_conv_tvm(func, sizes, target):
 def matmul_timer_mxnet(n, ctx):
     """The matrix multiplication timer for MXNet
 
-    n : width and height of inptus 
+    n : width and height of inptus
     ctx : device
     """
     timer = timeit.Timer(
@@ -294,5 +298,3 @@ def matmul_timer_mxnet(n, ctx):
         'mx.nd.waitall()' % (n, n, ctx),
         stmt='mx.nd.dot(a, b, out=c); c.wait_to_read()')
     return timer.timeit
-
-
