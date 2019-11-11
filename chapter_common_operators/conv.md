@@ -154,7 +154,7 @@ oc, ic, n, k, p, s = 4, 6, 12, 3, 1, 1
 X, K, Y, _ = conv(oc, ic, n, n, k, k, p, p, s, s)
 s = tvm.create_schedule(Y.op)
 mod = tvm.build(s, [X, K, Y])
-print(tvm.lower(s, [A, B], simple_mode=True))
+print(tvm.lower(s, [X, K, Y], simple_mode=True))
 
 data, weight, out = get_conv_data(oc, ic, n, k, p, s, tvm.nd.array)
 mod(data, weight, out)
