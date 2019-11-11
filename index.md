@@ -42,4 +42,4 @@ chapter_deployment/index
 chapter_references/zreferences
 ```
 
-## [Discuss](https://discuss.tvm.ai/t/d2l-tvm-a-tvm-introduction-book/4305)
+## [Discussions](https://discuss.tvm.ai/t/d2l-tvm-a-tvm-introduction-book/4305)
