@@ -102,3 +102,5 @@ try:
 except:
   pass
 ```
+
+## [Discussions](https://discuss.tvm.ai/t/chapter-installation/4706)
