@@ -1,4 +1,5 @@
 # Shapes
+:label:`ch_shapes`
 
 The vector addition module defined in :numref:`ch_vector_add` only accepts vectors with 100-length. It's too restrictive for real scenarios where inputs can have arbitrary shapes. In this section, we will show how to relax this constraint to deal with general cases.
 

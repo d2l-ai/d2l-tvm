@@ -1,7 +1,7 @@
 # Running on a Remote Machine
 :label:`ch_remote`
 
-In this book, we will run and optimize programs on various hardware platforms. One way is to log into the machine with the desired hardware, install required packages and then run the workloads there. It, however, makes maintaining the source codes and data difficult, especially when the targeting hardware is with minimal power. In this session, we will describe another solution: running a daemon on the remote machine and then sending the compiled module and input data to it only for execution.
+In this book, we will run and optimize programs on various hardware platforms. One way is to log into the machine with the desired hardware, install required packages and then run the workloads there. It, however, makes maintaining the source codes and data difficult, especially when the targeting hardware is with minimal power. In this section, we will describe another solution: running a daemon on the remote machine and then sending the compiled module and input data to it only for execution.
 
 ```{.python .input  n=1}
 import d2ltvm
