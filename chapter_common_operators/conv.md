@@ -141,7 +141,7 @@ def get_conv_data(oc, ic, n, k, p=0, s=1, constructor=None):
     weight = np.random.normal(size=(oc, ic, k, k)).astype('float32')
     on = conv_out_size(n, k, p, s)
     out = np.empty((oc, on, on), dtype='float32')
-    if constructor is not None:
+    if constructor:
         data, weight, out = (constructor(x) for x in [data, weight, out])
     return data, weight, out
 

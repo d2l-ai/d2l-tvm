@@ -40,7 +40,7 @@ def get_abc(shape, constructor=None):
     a = np.random.normal(size=shape).astype(np.float32)
     b = np.random.normal(size=shape).astype(np.float32)
     c = np.empty_like(a)
-    if constructor is not None:
+    if constructor:
         a, b, c = [constructor(x) for x in (a, b, c)]
     return a, b, c
 ```
