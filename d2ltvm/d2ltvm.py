@@ -13,13 +13,16 @@ import numpy as np
 from matplotlib import pyplot as plt
 from IPython import display
 try:
+  import mxnet as mx
+except:
+  pass
 
 
 # Defined in file: ./chapter_getting_started/vector_add.md
 def get_abc(shape, constructor=None):
-    """Return random a, b and empty c with the same shape.  
+    """Return random a, b and empty c with the same shape.
     """
-    np.random.seed(0) 
+    np.random.seed(0)
     a = np.random.normal(size=shape).astype(np.float32)
     b = np.random.normal(size=shape).astype(np.float32)
     c = np.empty_like(a)
