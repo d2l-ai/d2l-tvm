@@ -26,7 +26,7 @@ def get_abc(shape, constructor=None):
     a = np.random.normal(size=shape).astype(np.float32)
     b = np.random.normal(size=shape).astype(np.float32)
     c = np.empty_like(a)
-    if constructor is not None:
+    if constructor:
         a, b, c = [constructor(x) for x in (a, b, c)]
     return a, b, c
 
@@ -67,7 +67,7 @@ def matmul(n, m, l):
 
 # Defined in file: ./chapter_common_operators/conv.md
 def padding(X, ph, pw):
-    """Pad X with 0s
+    """Pad X with 0s in 2-D
 
     ph, pw : height and width padding
     """
@@ -83,8 +83,10 @@ def padding(X, ph, pw):
 
 # Defined in file: ./chapter_common_operators/conv.md
 def conv_out_size(n, k, p, s):
-    """Compute the output size by given input size n,
-    kernel size k, padding p, and stride s"""
+    """Compute the output size by given input size n (width or height),
+    kernel size k, padding p, and stride s
+    Return output size (width or height)
+    """
     return (n - k + 2 * p)//s + 1
 
 
@@ -92,11 +94,11 @@ def conv_out_size(n, k, p, s):
 def conv(oc, ic, nh, nw, kh, kw, ph=0, pw=0, sh=1, sw=1):
     """Convolution
 
-    oc, ic : output and input channels.
+    oc, ic : output and input channels
     nh, nw : input width and height
     kh, kw : kernel width and height
-    ph, pw : height and width padding
-    sh, sw : height and width strides
+    ph, pw : height and width padding sizes, default 0
+    sh, sw : height and width strides, default 1
     """
     # reduction axes
     ric = tvm.reduce_axis((0, ic), name='ric')
@@ -118,14 +120,24 @@ def conv(oc, ic, nh, nw, kh, kw, ph=0, pw=0, sh=1, sw=1):
 
 
 # Defined in file: ./chapter_common_operators/conv.md
-def get_conv_data(oc, ic, n, k, p=0, s=1, generator=None):
+def get_conv_data(oc, ic, n, k, p=0, s=1, constructor=None):
+    """Return random 3-D data tensor, 3-D kernel tenor and empty 3-D output 
+    tensor with the shapes specified by input arguments.
+
+    oc, ic : output and input channels
+    n : input width and height
+    k : kernel width and height
+    p : padding size, default 0
+    s : stride, default 1
+    constructor : user-defined tensor constructor
+    """
     np.random.seed(0)
     data = np.random.normal(size=(ic, n, n)).astype('float32')
     weight = np.random.normal(size=(oc, ic, k, k)).astype('float32')
     on = conv_out_size(n, k, p, s)
     out = np.empty((oc, on, on), dtype='float32')
-    if generator:
-        data, weight, out = (generator(x) for x in [data, weight, out])
+    if constructor:
+        data, weight, out = (constructor(x) for x in [data, weight, out])
     return data, weight, out
 
 
@@ -148,7 +160,7 @@ def conv_mxnet(data, weight, bias, out, k, p, s):
 # Defined in file: ./chapter_cpu_schedules/call_overhead.md
 def bench_workload(workload):
     """Benchmarka a workload
-
+    
     workload - must accept a num_repeat argument and return the total runtime
     """
     workload(1)  # warmup
@@ -298,3 +310,5 @@ def matmul_timer_mxnet(n, ctx):
         'mx.nd.waitall()' % (n, n, ctx),
         stmt='mx.nd.dot(a, b, out=c); c.wait_to_read()')
     return timer.timeit
+
+

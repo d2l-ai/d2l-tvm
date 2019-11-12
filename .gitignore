@@ -6,3 +6,4 @@ _build/
 resnet18*
 *.tar
 *.so
+.DS_Store

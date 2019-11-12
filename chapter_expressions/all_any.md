@@ -1,4 +1,5 @@
 # Truth Value Testing: `all` and `any`
+:label:`ch_all_any`
 
 In Python, we can use `all` and `any` to get the boolean return of a list of values. `all` returns the logical `and` result while `any` returns the logical `or` result.
 

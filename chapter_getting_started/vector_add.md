@@ -3,7 +3,7 @@
 
 Now you have installed all libraries, let's write our first program: summing two `n`-dimensional vectors `a` and `b`. It's straightforward in NumPy, where we can do it by `c = a + b`.
 
-## Implemeting with NumPy
+## Implementing with NumPy
 
 ```{.python .input  n=1}
 import numpy as np
@@ -40,7 +40,7 @@ def get_abc(shape, constructor=None):
     a = np.random.normal(size=shape).astype(np.float32)
     b = np.random.normal(size=shape).astype(np.float32)
     c = np.empty_like(a)
-    if constructor is not None:
+    if constructor:
         a, b, c = [constructor(x) for x in (a, b, c)]
     return a, b, c
 ```

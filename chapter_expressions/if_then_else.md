@@ -1,7 +1,7 @@
 # Conditional Expression: `if-then-else`
 :label:`ch_if_then_else`
 
-The `if-then-else` statement is supported through `tvm.if_then_else`. In this session, 
+The `if-then-else` statement is supported through `tvm.if_then_else`. In this section, 
 we will introduce this expression using computing the lower triangle of an matrix as the example.
 
 ```{.python .input  n=1}
