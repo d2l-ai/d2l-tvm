@@ -30,7 +30,7 @@ def matmul(n, m, l):
     B = tvm.placeholder((l, m), name='b')
     C = tvm.compute((n, m),
                     lambda x, y: tvm.sum(A[x, k] * B[k, y], axis=k),
-                    name='c')
+                    name='C')
     return A, B, C
 ```
 

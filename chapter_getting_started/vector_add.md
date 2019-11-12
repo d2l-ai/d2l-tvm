@@ -3,7 +3,7 @@
 
 Now you have installed all libraries, let's write our first program: summing two `n`-dimensional vectors `a` and `b`. It's straightforward in NumPy, where we can do it by `c = a + b`.
 
-## Implemeting with NumPy
+## Implementing with NumPy
 
 ```{.python .input  n=1}
 import numpy as np

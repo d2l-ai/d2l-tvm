@@ -110,14 +110,14 @@ def conv(oc, ic, nh, nw, kh, kw, ph=0, pw=0, sh=1, sw=1):
     oh = conv_out_size(nh, kh, ph, sh)
     ow = conv_out_size(nw, kw, pw, sw)
     # pad X and then compute Y
-    X = tvm.placeholder((ic, nh, nw), name='x')
-    K = tvm.placeholder((oc, ic, kh, kw), name='k')
+    X = tvm.placeholder((ic, nh, nw), name='X')
+    K = tvm.placeholder((oc, ic, kh, kw), name='K')
     PaddedX = padding(X, ph, pw) if ph * pw != 0 else X
     Y = tvm.compute(
         (oc, oh, ow),
         lambda c, i, j: tvm.sum(
             PaddedX[ric, i*sh+rkh, j*sw+rkw] * K[c, ric, rkh, rkw],
-            axis=[ric, rkh, rkw]), name='y')
+            axis=[ric, rkh, rkw]), name='Y')
     return X, K, Y, PaddedX
 ```
 
