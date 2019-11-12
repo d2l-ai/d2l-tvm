@@ -26,8 +26,8 @@ def matmul(n, m, l):
     C : n x m matrix with C = A B
     """
     k = tvm.reduce_axis((0, l), name='k')
-    A = tvm.placeholder((n, l), name='a')
-    B = tvm.placeholder((l, m), name='b')
+    A = tvm.placeholder((n, l), name='A')
+    B = tvm.placeholder((l, m), name='B')
     C = tvm.compute((n, m),
                     lambda x, y: tvm.sum(A[x, k] * B[k, y], axis=k),
                     name='C')
