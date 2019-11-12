@@ -34,9 +34,9 @@ Given we will frequently create two random ndarrays and another empty one to sto
 ```{.python .input  n=3}
 # Save to the d2ltvm package.
 def get_abc(shape, constructor=None):
-    """Return random a, b and empty c with the same shape.  
+    """Return random a, b and empty c with the same shape.
     """
-    np.random.seed(0) 
+    np.random.seed(0)
     a = np.random.normal(size=shape).astype(np.float32)
     b = np.random.normal(size=shape).astype(np.float32)
     c = np.empty_like(a)
@@ -45,7 +45,7 @@ def get_abc(shape, constructor=None):
     return a, b, c
 ```
 
-Note that we fixed the random seed so that we will always get the same results to facilitate the comparison between NumPy, TVM and others. In addition, it accepts an optional `constructor` to  convert the data into a different format. 
+Note that we fixed the random seed so that we will always get the same results to facilitate the comparison between NumPy, TVM and others. In addition, it accepts an optional `constructor` to  convert the data into a different format.
 
 ## Defining the TVM Computation
 
@@ -73,7 +73,7 @@ A, B, C = vector_add(n)
 type(A), type(C)
 ```
 
-We can see that `A`, `B`, and `C` are all `Tensor` objects, which can be viewed as a symbolic version of NumPy's ndarray. We can access 
+We can see that `A`, `B`, and `C` are all `Tensor` objects, which can be viewed as a symbolic version of NumPy's ndarray. We can access
 the variables' attributes such as data type and shape. But those values don't have concrete values right now.
 
 ```{.python .input  n=32}
@@ -94,7 +94,7 @@ A.op.__class__.__bases__[0]
 
 ## Creating a Schedule
 
-To run the computation, we need to specify how to execute the program, for example, the order to access data and how to do multi-threading parallization. 
+To run the computation, we need to specify how to execute the program, for example, the order to access data and how to do multi-threading parallization.
 Such an execution plan is called a *schedule*. Since `C` is the output tensor, let's create a default schedule on its operator and print the pseudo codes.
 
 ```{.python .input  n=48}
@@ -116,14 +116,14 @@ tvm.lower(s, [A, B, C], simple_mode=True)
 The `lower` method accepts the schedule and input and output tensors. The `simple_mode=True` will print the program in a simple and compact way.
 Note that the program has added proper for-loops according to the output shape. Overall, it's quite similar to the preview function `vector_add`.
 
-Now you see that TVM separates the computation and the schedule. The computation defines how the results are computed, 
-which will not change no matter on what hardware platform you run the program. 
+Now you see that TVM separates the computation and the schedule. The computation defines how the results are computed,
+which will not change no matter on what hardware platform you run the program.
 On the other hand, an efficient schedule are often hardware dependent, but changing a schedule will not impact the correctness.
-The idea of separating computation from schedule is inherited by TVM from Halide :cite:`Ragan-Kelley.Barnes.Adams.ea.2013`. 
+The idea of separating computation from schedule is inherited by TVM from Halide :cite:`Ragan-Kelley.Barnes.Adams.ea.2013`.
 
 ## Compilation and Execution
 
-Once both computation and schedule are defined, we can compile them into an executable module with `tvm.build`. It accepts the same argument as `tvm.lower`. In fact, it first calls `tvm.lower` to generate the program and then compiles to machine codes. 
+Once both computation and schedule are defined, we can compile them into an executable module with `tvm.build`. It accepts the same argument as `tvm.lower`. In fact, it first calls `tvm.lower` to generate the program and then compiles to machine codes.
 
 ```{.python .input  n=6}
 mod = tvm.build(s, [A, B, C])
@@ -218,3 +218,6 @@ Implementing an operator using TVM has three steps:
 3. Compile to the hardware target.
 
 In addition, we can save the compiled module into disk so we can load it back later.
+
+
+## [Discussions](https://discuss.tvm.ai/t/getting-started-vector-addition/4707)

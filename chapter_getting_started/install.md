@@ -103,4 +103,4 @@ except:
   pass
 ```
 
-## [Discussions](https://discuss.tvm.ai/t/chapter-installation/4706)
+## [Discussions](https://discuss.tvm.ai/t/getting-started-installation/4706)

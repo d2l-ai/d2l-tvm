@@ -144,3 +144,5 @@ labels[a[0]], labels[a[1]]
 
 - We can install a TVM runtime on a remote machine to start an RPC server to accept workloads to run.
 - A program can be compiled locally with specifying the remote machine's architecture target (called cross-compilation), and then run on the remote machine via RPC.
+
+## [Discussions](https://discuss.tvm.ai/t/getting-started-running-on-a-remote-machine/4709)

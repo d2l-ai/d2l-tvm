@@ -7,7 +7,7 @@ You have seen how to implement and compile a simple vector addition operator in 
 import numpy as np
 import mxnet as mx
 from PIL import Image
-import tvm 
+import tvm
 from tvm import relay
 ```
 
@@ -23,7 +23,7 @@ model = mx.gluon.model_zoo.vision.resnet18_v2(pretrained=True)
 len(model.features), model.output
 ```
 
-The loaded model is trained on the Imagenet 1K dataset, which contains around 1 million natural object images among 1000 classes. The model has two parts, the main body part `model.features` contains 13 blocks, and the output layer is a dense layer with 1000 outputs. 
+The loaded model is trained on the Imagenet 1K dataset, which contains around 1 million natural object images among 1000 classes. The model has two parts, the main body part `model.features` contains 13 blocks, and the output layer is a dense layer with 1000 outputs.
 
 The following code block loads the text labels for each class in the Imagenet dataset.
 
@@ -58,9 +58,9 @@ x.shape
 
 ## Compile Pre-trained Models
 
-To compile a model, we first express the MXNet model in Relay IR, which the `from_mxnet` method could help. 
-In the method, we provide the model with the input data shape. Some neural networks may require some dimension(s) of the data shape to be determined later. 
-Hoever, in ResNet model the data shape is fixed, which makes it easier for the compiler to acheive high performance. 
+To compile a model, we first express the MXNet model in Relay IR, which the `from_mxnet` method could help.
+In the method, we provide the model with the input data shape. Some neural networks may require some dimension(s) of the data shape to be determined later.
+Hoever, in ResNet model the data shape is fixed, which makes it easier for the compiler to acheive high performance.
 We will mostly stick to fixed data shape in the book. We only touch the dynamic data shape (i.e. some dimension(s) to be determined in runtime) in very late chapters.
 
 ```{.python .input  n=6}
@@ -68,7 +68,7 @@ relay_mod, relay_params = relay.frontend.from_mxnet(model, {'data': x.shape})
 type(relay_mod), type(relay_params)
 ```
 
-This method will return the program `relay_mod`, which is a `relay` module, and a dictionary of parameters `relay_params` that maps a string key to a TVM ndarray. Next, we lower the module to some lower-level IR which can be comsumed by `llvm` backend. [LLVM](https://en.wikipedia.org/wiki/LLVM) defines an IR that has been adopted by multiple programming languages. The LLVM compiler is then able to compile the generated programs into machine codes for CPUs. We have already used it to compile the vector addition operator in :numref:`ch_vector_add`, despite that we didn't explicitly specify it.  
+This method will return the program `relay_mod`, which is a `relay` module, and a dictionary of parameters `relay_params` that maps a string key to a TVM ndarray. Next, we lower the module to some lower-level IR which can be comsumed by `llvm` backend. [LLVM](https://en.wikipedia.org/wiki/LLVM) defines an IR that has been adopted by multiple programming languages. The LLVM compiler is then able to compile the generated programs into machine codes for CPUs. We have already used it to compile the vector addition operator in :numref:`ch_vector_add`, despite that we didn't explicitly specify it.
 
 In addition, we set the optimization level to the highest level 3. You may get warning messages that not every operator is well optimized, you can ignore it for now. We will get back to it later.
 
@@ -84,7 +84,7 @@ The compiled module has three parts: `graph` is a json string described the neur
 type(graph), type(mod), type(params)
 ```
 
-You can view `mod` as a TVM module we already seen in :numref:`ch_vector_add`. 
+You can view `mod` as a TVM module we already seen in :numref:`ch_vector_add`.
 
 ## Inference
 
@@ -146,3 +146,5 @@ tvm.testing.assert_allclose(loaded_scores, scores)
 
 - We can use `relay` of TVM to convert and compile a neural network into a module for model inference.
 - We can save the compiled module into disk to facilitate future deployment.
+
+## [Discussions](https://discuss.tvm.ai/t/getting-started-neural-network-inference/4708)
