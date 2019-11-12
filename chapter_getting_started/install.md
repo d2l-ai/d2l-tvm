@@ -1,8 +1,13 @@
 # Installation
 :label:`ch_install`
 
+Each section of this book is a Jupyter notebook. The easiest way to run them is clicking the **COLAB** button on the upper right of the HTML page, which will directly you to Google Colab with the corresponding notebook opened. Running the first code cell will connect to a host runtime and show the following warning message. You can click RUN ANYWAY to continue. 
 
-To get you up and run with hands-on experiences, we'll need you to set up a Python environment, Jupyter's interactive notebooks, the relevant libraries, and the code needed to *run the book*.
+![Click RUN ANYWAY to run a section on COlab](../img/colab.png)
+:label:`img_colab`
+::width:`400px`
+
+The reset of this section will go through how to set up a Python environment, Jupyter's interactive notebooks, the relevant libraries, and the code needed to run the book you can run them on your machines.
 
 ## Obtaining Source Codes
 
@@ -44,11 +49,13 @@ book requires at least
 set(USE_LLVM ON)
 ```
 
+
 If you plan to run on Nvidia GPUs as well, you will also need to
 
 ```bash
 set(USE_CUDA ON)
 ```
+
 
 Also
 don't forget to enable `cython`, which accelerates the performance. You just
