@@ -4,8 +4,8 @@
 Each section of this book is a Jupyter notebook. The easiest way to run them is clicking the **COLAB** button on the upper right of the HTML page, which will directly you to Google Colab with the corresponding notebook opened. Running the first code cell will connect to a host runtime and show the following warning message. You can click RUN ANYWAY to continue.
 
 ![Click RUN ANYWAY to run a section on Colab.](../img/colab.png)
-:label:`img_colab`
 :width:`400px`
+:label:`img_colab`
 
 The reset of this section will go through how to set up a Python environment, Jupyter's interactive notebooks, the relevant libraries, and the code needed to run the book you can run them on your machines.
 
