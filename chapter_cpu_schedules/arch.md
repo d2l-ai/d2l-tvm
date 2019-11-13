@@ -93,13 +93,13 @@ Later on in the book, you'll see that we only launch 8 threads even if our CPU p
 ### Performance
 
 We often use floating point operations per second ([FLOPS](https://en.wikipedia.org/wiki/FLOPS)) to measure the performance of a hardware platform or a executable program.
-The theoretical peak CPU performance can be computed by
+The theoretical peak performance of a single CPU can be computed by
 
-`clock_rate * #physical_cores * #operations_per_cycle * #operands_per_instruction`
+`#physical_cores * #cycles_per_second * #instructions_per_cycle * #operations_per_instruction`
 
-where `#operands_per_instruction` is also called the SIMD width.
+where `#instructions_per_cycle` is also called the SIMD width.
 
-For the CPU we are using, the max clock rate is $2.5\times 10^9$, it has 8 physical cores, the [FMA](https://en.wikipedia.org/wiki/FMA_instruction_set) instruction set in AVX-512 compute `a += b * c` each time, which contains 2 operations, the AVX-512 computes 16 float32 instructions per cycle. Therefore, the GFLOPS (gigaFLOPS) for single precision (float32) is
+For the CPU we are using, it has 8 physical cores, the max clock rate (i.e. `#cycles_per_second`) is $2.5\times 10^9$, the AVX-512 computes 16 float32 instructions per cycle, the [FMA](https://en.wikipedia.org/wiki/FMA_instruction_set) instruction set in AVX-512 compute `a += b * c` each time, which contains 2 operations. Therefore, the GFLOPS (gigaFLOPS) for single precision (float32) is
 
 ```{.python .input}
 2.5 * 8 * 16 * 2
@@ -107,7 +107,7 @@ For the CPU we are using, the max clock rate is $2.5\times 10^9$, it has 8 physi
 
 You can modify the above code based on your system information to calculate your CPU peak performance.
 
-Matrix multiplication (*GEMM*) is a good benchmark workload for the peak performance, which has $2\times n^3$ operations in total if all matrices are in shape $[n, n]$. After executing a *GEMM*, we can get its (G)FLOPS by dividing its total operations using the averaged executing time. As can be seen, the measured GFLOPS is close to the peak performance (~90% of peak).
+Matrix multiplication (*matmul*) is a good benchmark workload for the peak performance, which has $2\times n^3$ operations in total if all matrices are in shape $[n, n]$. After executing a *matmul*, we can get its (G)FLOPS by dividing its total operations using the averaged executing time. As can be seen, the measured GFLOPS is close to the peak performance (~90% of peak).
 
 ```{.python .input}
 x = np.random.normal(size=(1000, 1000)).astype('float32')
