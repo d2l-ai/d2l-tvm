@@ -3,6 +3,8 @@
 
 In this section, we will optimize the vector addition defined in :numref:`ch_vector_add` on CPU.
 
+## Setup
+
 ```{.python .input  n=9}
 %matplotlib inline
 import d2ltvm
@@ -61,7 +63,7 @@ plot_gflops(sizes, [np_gflops], ['numpy'])
 
 As we can see that the performance first increases with the vector length, which is due to the system overhead domination when the workload is small. The performance then decreases when we cannot fit all data into the last level cache.
 
-## Default Scheduling
+## Default Schedule
 
 In the following code block, we define a reusable method to benchmark TVM performance. It accepts three arguments: a `func` which returns the schedule, the size list specifying a number of the vector lengths, and the machine target which is CPU-related for this chapter and will be GPU-related in the next chapter.
 
