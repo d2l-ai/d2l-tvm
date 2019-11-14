@@ -159,14 +159,15 @@ def conv_mxnet(data, weight, bias, out, k, p, s):
 
 # Defined in file: ./chapter_cpu_schedules/call_overhead.md
 def bench_workload(workload):
-    """Benchmarka a workload
+    """Benchmark a workload
     
-    workload - must accept a num_repeat argument and return the total runtime
+    workload: a method that accept a num_repeat argument 
+    and return its total execution time
     """
     workload(1)  # warmup
     time = workload(1)  # the time to run once
     if time > 1: return time
-    # The number of repeats to measure at least 1 second.
+    # The number of repeats to measure at least 1 second
     num_repeats = max(int(1.0 / time), 5)
     return workload(num_repeats) / num_repeats
 
@@ -213,7 +214,7 @@ def bench_vector_add_tvm(func, sizes, target):
         ctx = tvm.context(target, 0)
         a, b, c = d2ltvm.get_abc(n, lambda x: tvm.nd.array(x, ctx=ctx))
         times.append(d2ltvm.bench_workload(workload))
-    return 2 * sizes / 1e9 / np.array(times)
+    return sizes / 1e9 / np.array(times)
 
 
 # Defined in file: ./chapter_cpu_schedules/matmul.md
