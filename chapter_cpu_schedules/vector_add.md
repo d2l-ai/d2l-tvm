@@ -65,7 +65,7 @@ As we can see that the performance first increases with the vector length, which
 
 ## Default Schedule
 
-In the following code block, we define a reusable method to benchmark TVM performance. It accepts three arguments: a `func` which returns the schedule, the size list specifying a number of the vector lengths, and the machine target which is CPU-related for this chapter and will be GPU-related in the next chapter.
+In the following code block, we define a reusable method to benchmark TVM performance. It accepts three arguments: 1) a `func` which returns the schedule and its corresponding symbolic tensor arguments; 2) the size list specifying a number of the vector lengths; and 3) the machine target which is CPU-related for this chapter and will be GPU-related in the next chapter.
 
 ```{.python .input  n=4}
 # Save to the d2ltvm package.

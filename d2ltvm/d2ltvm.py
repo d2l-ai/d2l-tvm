@@ -243,7 +243,7 @@ def bench_matmul_tvm(func, sizes, target):
 
 # Defined in file: ./chapter_cpu_schedules/conv.md
 def conv_gflop(oc, ic, n, k, p, s):
-    """Compute the #floating points in a convolution.
+    """Compute the #floating point operations in a convolution.
 
     The arguments are output channels oc, input channels ic, input size n,
     kernel size k, padding p and stride s.
@@ -273,7 +273,7 @@ def conv_timer_mxnet(c, n, k, ctx):
 
 # Defined in file: ./chapter_cpu_schedules/conv.md
 def bench_conv_mxnet(sizes, ctx='cpu'):
-    """Return the GFLOPs of MXNet convolution"""
+    """Return the GFLOPS of MXNet convolution"""
     return [conv_gflop(c, c, n, k, (k-1)//2, 1) /
             d2ltvm.bench_workload(conv_timer_mxnet(c, n, k, ctx))
             for c, n, k in sizes]

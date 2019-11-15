@@ -92,7 +92,7 @@ Later on in the book, you'll see that we only launch 8 threads even if our CPU p
 
 ### Performance
 
-We often use floating point operations per second ([FLOPS](https://en.wikipedia.org/wiki/FLOPS)) to measure the performance of a hardware platform or a executable program.
+We often use floating point operations per second ([FLOPS](https://en.wikipedia.org/wiki/FLOPS)) to measure the performance of a hardware platform or an executable program.
 The theoretical peak performance of a single CPU can be computed by
 
 `#physical_cores * #cycles_per_second * #instructions_per_cycle * #operations_per_instruction`
