@@ -40,7 +40,7 @@ def conv_timer_mxnet(c, n, k, ctx):
         'import mxnet as mx\n'
         'c, n, k, p, s = %d, %d, %d, %d, 1\n'
         'data, weight, bias, out = d2ltvm.get_conv_data_mxnet(\n'
-        '    c, c, n, k, p, s, mx.%s())'%(c, n, k, (k-1)//2, ctx),
+        '    c, c, n, k, p, s, %s)'%(c, n, k, (k-1)//2, ctx),
         stmt='d2ltvm.conv_mxnet(data, weight, bias, out, k, p, s);'
         'out.wait_to_read()')
     return timer.timeit
