@@ -48,7 +48,7 @@ The CPU frequency increased rapidly until the beginning of the 21st century. In 
 
 we can see that it has a lower clock rate comapred to the product in 2003, but it might be 100x faster than the Pentium 4 CPU. One secret source is that new CPU models explore a lot more in the territory of parallel execution. Next we briefly discuss two typical parallelizations.
 
-![Single core vs single core with SIMD vs multi-core with SIMD.](../img/cpu_parallel_arch.svg)
+![Single core vs. single core with SIMD vs. multi-core with SIMD.](../img/cpu_parallel_arch.svg)
 :label:`fig_cpu_parallel_arch`
 
 ### SIMD
