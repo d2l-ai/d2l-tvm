@@ -159,14 +159,15 @@ def conv_mxnet(data, weight, bias, out, k, p, s):
 
 # Defined in file: ./chapter_cpu_schedules/call_overhead.md
 def bench_workload(workload):
-    """Benchmarka a workload
+    """Benchmark a workload
     
-    workload - must accept a num_repeat argument and return the total runtime
+    workload: a method that accept a num_repeat argument 
+    and return its total execution time
     """
     workload(1)  # warmup
     time = workload(1)  # the time to run once
     if time > 1: return time
-    # The number of repeats to measure at least 1 second.
+    # The number of repeats to measure at least 1 second
     num_repeats = max(int(1.0 / time), 5)
     return workload(num_repeats) / num_repeats
 
@@ -213,7 +214,7 @@ def bench_vector_add_tvm(func, sizes, target):
         ctx = tvm.context(target, 0)
         a, b, c = d2ltvm.get_abc(n, lambda x: tvm.nd.array(x, ctx=ctx))
         times.append(d2ltvm.bench_workload(workload))
-    return 2 * sizes / 1e9 / np.array(times)
+    return sizes / 1e9 / np.array(times)
 
 
 # Defined in file: ./chapter_cpu_schedules/matmul.md
@@ -242,7 +243,7 @@ def bench_matmul_tvm(func, sizes, target):
 
 # Defined in file: ./chapter_cpu_schedules/conv.md
 def conv_gflop(oc, ic, n, k, p, s):
-    """Compute the #floating points in a convolution.
+    """Compute the #floating point operations in a convolution.
 
     The arguments are output channels oc, input channels ic, input size n,
     kernel size k, padding p and stride s.
@@ -264,7 +265,7 @@ def conv_timer_mxnet(c, n, k, ctx):
         'import mxnet as mx\n'
         'c, n, k, p, s = %d, %d, %d, %d, 1\n'
         'data, weight, bias, out = d2ltvm.get_conv_data_mxnet(\n'
-        '    c, c, n, k, p, s, mx.%s())'%(c, n, k, (k-1)//2, ctx),
+        '    c, c, n, k, p, s, %s)'%(c, n, k, (k-1)//2, ctx),
         stmt='d2ltvm.conv_mxnet(data, weight, bias, out, k, p, s);'
         'out.wait_to_read()')
     return timer.timeit
@@ -272,7 +273,7 @@ def conv_timer_mxnet(c, n, k, ctx):
 
 # Defined in file: ./chapter_cpu_schedules/conv.md
 def bench_conv_mxnet(sizes, ctx='cpu'):
-    """Return the GFLOPs of MXNet convolution"""
+    """Return the GFLOPS of MXNet convolution"""
     return [conv_gflop(c, c, n, k, (k-1)//2, 1) /
             d2ltvm.bench_workload(conv_timer_mxnet(c, n, k, ctx))
             for c, n, k in sizes]

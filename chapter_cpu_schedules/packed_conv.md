@@ -1,7 +1,7 @@
 # Packed Convolution
 :label:`ch_packed_conv_cpu`
 
-We observed in :numref:`ch_conv_cpu` that the performance degrades when increasing the channel size for the convolution operator. In this chapter, we will consider to tile the channel axes and pack the data to improve the its efficiency.
+We observed in :numref:`ch_conv_cpu` that the performance degrades when increasing the channel size for the convolution operator. In this section, we will consider tiling the channel axes and packing the data to improve the performance.
 
 ```{.python .input  n=11}
 import d2ltvm
@@ -13,9 +13,9 @@ target = 'llvm -mcpu=skylake-avx512'
 
 ## Packing Data and Weight
 
-In last chapter, we first split the weight and height axes and then move the inner axes as the last dimensions during computing. It's the same idea to tile the channels. But we do one additional step to actual move the data in the inner channel loop to the last dimension. So we pay the data movement cost once, while improve the data accessing performance later.
+In :numref:`ch_conv_cpu`, we first tiled the width and height axes and then moved the inner axes as the innermost dimensions during computing. It's the same idea to tile the channels. But we do one additional step to actually move the data in the inner channel loop to the last dimension, i.e. do data layout transformation. So we pay the data movement cost once, while improving the data accessing performance sigficantly.
 
-The following codes split the channel dimension and move the data in NumPy.
+The following code block splits the channel dimension and move the data in NumPy.
 
 ```{.python .input  n=12}
 c, n, tc = 4, 2, 2  # channel, height/width, and tiling size
@@ -32,7 +32,7 @@ Now let's implement the pack computation in TVM.
 def conv_pack(oc, ic, nh, nw, kh, kw, ph, pw, toc, tic):
     """Pack data and weight for convolution
 
-    oc, ic : output and input channels.
+    oc, ic : output and input channels
     nh, nw : input width and height
     kh, kw : kernel width and height
     ph, pw : height and width padding
@@ -67,7 +67,7 @@ np.testing.assert_equal(packed_x.asnumpy(), y)
 
 ## Computation
 
-Since we changed the data layout, we need to re-implement the convolution computation.
+Since we changed the data layout, we need to re-implement the convolution computation accordingly.
 
 ```{.python .input  n=15}
 def conv(oc, ic, nh, nw, kh, kw, ph, pw, sh, sw, toc, tic):
@@ -104,7 +104,7 @@ def conv(oc, ic, nh, nw, kh, kw, ph, pw, sh, sw, toc, tic):
     return X, K, Y, PaddedX, PackedX, PackedK, PackedY
 ```
 
-Let's compile it and compute the results.
+Let's compile it using the default scheduling and compute the results.
 
 ```{.python .input  n=16}
 oc, ic, n, k, p, s, toc, tic = 4, 6, 12, 3, 1, 1, 2, 3
@@ -115,7 +115,7 @@ data, weight, out = d2ltvm.get_conv_data(oc, ic, n, k, p, s, tvm.nd.array)
 mod(data, weight, out)
 ```
 
-And then verify the result correctness.
+And then verify the result.
 
 ```{.python .input  n=17}
 data, weight, bias, out_mx = d2ltvm.get_conv_data_mxnet(oc, ic, n, k, p, s)
@@ -129,7 +129,7 @@ The optimization strategy here is similar to :numref:`ch_conv_cpu`. The major di
 
 1. the innermost axis is the inner axis split from the output channel because the elements have already sit on the last dimension after packing.
 2. We only split the width dimension instead of both width and height dimensions.
-3. We need to optimize the packing and unpacking computations as well.
+3. We need to schedule the packing and unpacking computations as well.
 
 ```{.python .input  n=18}
 # tiling sizes for output channel, input channel, and width
@@ -138,13 +138,13 @@ toc, tic, tw = 16, 16, 4
 def cached_block(oc, ic, n, k, p, s):
     X, K, Y, PaddedX, PackedX, PackedK, PackedY = conv(
         oc, ic, n, n, k, k, p, p, s, s, toc, tic)
-    # Parallel on the first two dimensions oc_out and h
     s = tvm.create_schedule(Y.op)
     CachedY = s.cache_write(PackedY, 'local')
     oc_out, h, w, oc_in = s[PackedY].op.axis
     oc_out_h = s[PackedY].fuse(oc_out, h)
+    # Parallel on the first two dimensions oc_out and h
     s[PackedY].parallel(oc_out_h)
-    # Optimzie the computation of a cached output block
+    # Optimize the computation of a cached output block
     w_out, w_in = s[PackedY].split(w, factor=tw)  # Split the columns
     s[CachedY].compute_at(s[PackedY], w_out)
     _, _, cw, oc_in = CachedY.op.axis
@@ -153,7 +153,7 @@ def cached_block(oc, ic, n, k, p, s):
     s[CachedY].unroll(ric_in)
     s[CachedY].unroll(cw)
     s[CachedY].vectorize(oc_in)
-    # Opimize the padding
+    # Schedule the padding by adding thread-level parallelism
     if PaddedX != X:
         s[PaddedX].parallel(PaddedX.op.axis[0])
     # Optimize the packing of X and K
@@ -184,9 +184,9 @@ d2ltvm.plot_gflops(channels, [mxnet_gflops, tvm_gflops], ['mxnet', 'tvm'])
 
 ## Summary
 
-- We often split input and output channels to for better vectorization and pack data accordingly.
+- We often tile input and output channels to for better cache efficiency and pack data accordingly.
 
 ## Exercises
 
-- What if the number of channels cannot be divided by the tiling size.
+- What if the number of channels cannot be divided by the tiling size?
 - Try different tiling sizes.
