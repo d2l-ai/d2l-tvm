@@ -32,9 +32,9 @@ Our Tesla T4 card contains 40 SMs with a 6MB L2 cache shared by all SMs. It also
 :label:`fig_gpu_t4`
 
 More broadly, we compare the specification difference between the CPU and GPUs used in this book in :numref:`tab_cpu_gpu_compare`, where GPUs includes 
-(Tesla P100)[https://images.nvidia.com/content/pdf/tesla/whitepaper/pascal-architecture-whitepaper.pdf] (used in Colab), 
-(Tesla V100)[https://images.nvidia.com/content/volta-architecture/pdf/volta-architecture-whitepaper.pdf] (equipped in Amazon EC2 P3 instance), 
-and (Tesla T4)[https://www.nvidia.com/content/dam/en-zz/Solutions/design-visualization/technologies/turing-architecture/NVIDIA-Turing-Architecture-Whitepaper.pdf] (equipped in Amazon EC2 G4 instance).
+[Tesla P100](https://images.nvidia.com/content/pdf/tesla/whitepaper/pascal-architecture-whitepaper.pdf) (used in Colab), 
+[Tesla V100](https://images.nvidia.com/content/volta-architecture/pdf/volta-architecture-whitepaper.pdf) (equipped in Amazon EC2 P3 instance), 
+and [Tesla T4](https://www.nvidia.com/content/dam/en-zz/Solutions/design-visualization/technologies/turing-architecture/NVIDIA-Turing-Architecture-Whitepaper.pdf) (equipped in Amazon EC2 G4 instance).
 
 :Compare the commonly used CPUs and GPUs, `x` means not supported. \ $^*$: Tesla P100 processes FP16 using FP32 CUDA cores.
 
