@@ -301,7 +301,7 @@ def bench_conv_tvm(func, sizes, target):
 def matmul_timer_mxnet(n, ctx):
     """The matrix multiplication timer for MXNet
 
-    n : width and height of inptus
+    n : width and height of inputs
     ctx : device
     """
     timer = timeit.Timer(
