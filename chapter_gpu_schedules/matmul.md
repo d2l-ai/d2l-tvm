@@ -185,7 +185,7 @@ Finally, we measure the performance to compare with our baseline. You can see th
 
 ```{.python .input}
 tvm_gflops = d2ltvm.bench_matmul_tvm(matmul_gpu, sizes, 'cuda')
-d2ltvm.plot_gflops(sizes, [mxnet_gflops, tvm_gflops], legend=['MXNet', 'TVM'])
+d2ltvm.plot_gflops(sizes, [mx_gflops, tvm_gflops], legend=['MXNet', 'TVM'])
 ```
 
 ## Summary
