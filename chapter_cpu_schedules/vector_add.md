@@ -114,7 +114,7 @@ When the vector size is small, the default scheduling outperforms NumPy, which m
 
 ## Parallelization
 
-One important optimization that is not enabled by default is thread-level arallelization. The vector addition operator is an [embarrassingly parallel workload](https://en.wikipedia.org/wiki/Embarrassingly_parallel), we can just change the for-loop into a parallel for-loop. In TVM, we first obtain the scheduler for the output symbol `C` by `s[C]`, and then impose the parallelization of the computation to its first axis, which is `C.op.axis[0]`.
+One important optimization that is not enabled by default is thread-level parallelization. The vector addition operator is an [embarrassingly parallel workload](https://en.wikipedia.org/wiki/Embarrassingly_parallel), we can just change the for-loop into a parallel for-loop. In TVM, we first obtain the scheduler for the output symbol `C` by `s[C]`, and then impose the parallelization of the computation to its first axis, which is `C.op.axis[0]`.
 
 ```{.python .input  n=7}
 def parallel(n):
