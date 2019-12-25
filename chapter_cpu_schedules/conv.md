@@ -89,7 +89,7 @@ Just as we tiled matrices into blocks to improve the cache efficiency for matrix
 
 Consider a block of $Y$, denoted as `Y[i:i+tw, j:j+th]`, where `th` and `tw` are the tile sizes for height and width, respectively. We know the it can be computed by applying the convolution on a block of $X$ with kernel $K$. In particular, assuming the width and height of $K$ are `kw` and `kh`, then
 
-`Y[i:i+tw, j:j+th] = conv(X[i:i+tw+kw-1, Y[j:j+th+kh-1], K)`
+`Y[i:i+tw, j:j+th] = conv(X[i:i+tw+kw-1, j:j+th+kh-1], K)`
 
 The elements that needed for a block are illustrated in :numref:`fig_conv_block`. If we choose proper `tw` and `th`, we can fit data into the cache to improve its efficiency. This is easy to be generated to multiple output channels as it simply adds the number of kernels accordingly.
 
