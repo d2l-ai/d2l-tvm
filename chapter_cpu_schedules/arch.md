@@ -86,8 +86,8 @@ as 2 logical cores to the operating system. So even the system shows there are 1
 cores, physically our CPU only has 8 cores.
 
 Having two threads sharing the resource of the same core may increase the total throughput but at the expense of increasing the overall lantency.
-In addition the eefect of hyper-threading is very much dependent on the application.
-Thefore, it is not generally recommended to leverage hyper-threading in the deep learning workloads.
+In addition the effect of hyper-threading is very much dependent on the application.
+Therefore, it is not generally recommended to leverage hyper-threading in the deep learning workloads.
 Later on in the book, you'll see that we only launch 8 threads even if our CPU presents 16 cores.
 
 ### Performance
