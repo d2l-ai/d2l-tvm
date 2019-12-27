@@ -46,7 +46,7 @@ The CPU frequency increased rapidly until the beginning of the 21st century. In 
 !lscpu | grep MHz
 ```
 
-we can see that it has a lower clock rate comapred to the product in 2003, but it might be 100x faster than the Pentium 4 CPU. One secret source is that new CPU models explore a lot more in the territory of parallel execution. Next we briefly discuss two typical parallelizations.
+we can see that it has a lower clock rate compared to the product in 2003, but it might be 100x faster than the Pentium 4 CPU. One secret source is that new CPU models explore a lot more in the territory of parallel execution. Next we briefly discuss two typical parallelizations.
 
 ![Single core vs. single core with SIMD vs. multi-core with SIMD.](../img/cpu_parallel_arch.svg)
 :label:`fig_cpu_parallel_arch`
@@ -85,7 +85,7 @@ threads per core. By hyper-threading, each core is presented
 as 2 logical cores to the operating system. So even the system shows there are 16
 cores, physically our CPU only has 8 cores.
 
-Having two threads sharing the resource of the same core may increase the total throughput but at the expense of increasing the overall lantency.
+Having two threads sharing the resource of the same core may increase the total throughput but at the expense of increasing the overall latency.
 In addition the effect of hyper-threading is very much dependent on the application.
 Therefore, it is not generally recommended to leverage hyper-threading in the deep learning workloads.
 Later on in the book, you'll see that we only launch 8 threads even if our CPU presents 16 cores.
@@ -151,7 +151,7 @@ the latency to access L1 cache is less than 1 ns, the L2 cache's latency is arou
 :label:`fig_cpu_memory`
 
 A brief memory subsystem layout is illustrated in :numref:`fig_cpu_memory`.
-L1 and L2 caches are execlusive to each CPU core, and L3 cache is shared across the cores of the same CPU processor
+L1 and L2 caches are exclusive to each CPU core, and L3 cache is shared across the cores of the same CPU processor
 To processing on some data, a CPU will first check if the data exist at L1 cache, if not check L2 cache, if not check L3 cache, if not go to the main memory to retrieve the data and bring it all the way through L3 cache, L2 cache, and L1 cache, finally to the CPU registers.
 This looks very expensive but luckily in practice, the programs have the [data locality patterns](https://en.wikipedia.org/wiki/Locality_of_reference) which will accelerate the data retrieving procedure. There are two types of locality: temporal locality and spatial locality.
 Temporal locality means that the data we just used usually would be used in the near future so that they may be still in cache. Spatial locality means that the adjacent data of the ones we just used are likely to be used in the near future. As the system always brings a block of values to the cache each time (see the concept of [cache lines](https://en.wikipedia.org/wiki/CPU_cache#CACHE-LINES)), those adjacent data may be still in cache when referenced to.

@@ -57,5 +57,5 @@ np.testing.assert_allclose(np.dot(a.asnumpy(), b.asnumpy()),
 
 ## Summary
 
-- We can express the compututation of matrix multiplication in TVM in one line of code.
+- We can express the computation of matrix multiplication in TVM in one line of code.
 - The naive matrix multiplication is a 3-level nested for loop.

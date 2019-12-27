@@ -26,7 +26,7 @@ unzip d2l-tvm.zip -d d2l-tvm
 ## Installing Running Environment
 
 If you have both `Python 3.5` or later and `pip` installed, the easiest way to
-install the running environment is through `pip`. The reqiured packages are
+install the running environment is through `pip`. The required packages are
 
 - `d2ltvm` for all dependencies such as Jupyter and saved code blocks
 - `tvm` :cite:`Chen.Moreau.Jiang.ea.2018` for the deep learning compiler we are using
@@ -42,7 +42,7 @@ pip install git+https://github.com/d2l-ai/d2l-tvm
 Then compile `tvm` from source codes. TVM doesn't have a pip package because it
 highly depends on the libraries available on your system. Please follow the
 instructions  on
-[tvm.ai](https://docs.tvm.ai/install/from_source.html) to install `tvm`. The configration in `config.cmake` this
+[tvm.ai](https://docs.tvm.ai/install/from_source.html) to install `tvm`. The configuration in `config.cmake` this
 book requires at least
 
 ```bash

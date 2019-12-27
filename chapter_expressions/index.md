@@ -7,7 +7,7 @@ Being able to execute the operators efficiently is of course a necessity to high
 neural network model execution.
 
 In :numref:`ch_vector_add` you have seen how to build the vector addition
-expression in TVM. This chapter convers more concepts in TVM to construct
+expression in TVM. This chapter covers more concepts in TVM to construct
 expressions. Specifically, you'll learn about data types, shapes, indexing,
 reduction and control flow, based on which you'll be able to construct 
 operators in the next chapter.

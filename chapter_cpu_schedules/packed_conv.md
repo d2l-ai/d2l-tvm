@@ -13,7 +13,7 @@ target = 'llvm -mcpu=skylake-avx512'
 
 ## Packing Data and Weight
 
-In :numref:`ch_conv_cpu`, we first tiled the width and height axes and then moved the inner axes as the innermost dimensions during computing. It's the same idea to tile the channels. But we do one additional step to actually move the data in the inner channel loop to the last dimension, i.e. do data layout transformation. So we pay the data movement cost once, while improving the data accessing performance sigficantly.
+In :numref:`ch_conv_cpu`, we first tiled the width and height axes and then moved the inner axes as the innermost dimensions during computing. It's the same idea to tile the channels. But we do one additional step to actually move the data in the inner channel loop to the last dimension, i.e. do data layout transformation. So we pay the data movement cost once, while improving the data accessing performance significantly.
 
 The following code block splits the channel dimension and move the data in NumPy.
 

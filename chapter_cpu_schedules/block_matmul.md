@@ -103,7 +103,7 @@ s, (A, B, C) = cached_block(512)
 print(tvm.lower(s, [A, B, C], simple_mode=True))
 ```
 
-Note from the generated psuedo codes that we initialize `C.local` within the `yo` axis, and the size of `C.local` is `tx * ty = 1024`.
+Note from the generated pseudo codes that we initialize `C.local` within the `yo` axis, and the size of `C.local` is `tx * ty = 1024`.
 
 ```{.python .input  n=44}
 cached_gflops = d2ltvm.bench_matmul_tvm(cached_block, sizes, target)
@@ -111,7 +111,7 @@ d2ltvm.plot_gflops(sizes, [np_gflops, blocked_gflops, cached_gflops],
             ['numpy', 'block', '+cache'])
 ```
 
-We can see the the write cache improves the performance for matrix multiplicatin on large sizes.
+We can see the the write cache improves the performance for matrix multiplication on large sizes.
 
 ## Summary
 
