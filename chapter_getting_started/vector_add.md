@@ -94,7 +94,7 @@ A.op.__class__.__bases__[0]
 
 ## Creating a Schedule
 
-To run the computation, we need to specify how to execute the program, for example, the order to access data and how to do multi-threading parallization.
+To run the computation, we need to specify how to execute the program, for example, the order to access data and how to do multi-threading parallelization.
 Such an execution plan is called a *schedule*. Since `C` is the output tensor, let's create a default schedule on its operator and print the pseudo codes.
 
 ```{.python .input  n=48}

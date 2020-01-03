@@ -5,7 +5,7 @@ The vector addition module defined in :numref:`ch_vector_add` only accepts vecto
 
 ## Variable Shapes
 
-Remember that we create symbolic placeholders for tensors `A` and `B` so we can feed with data later. We can do the same thing for the shape as well. In particular, the follwing code block uses `tvm.var` to create a symbolic variable for an `int32` scalar, whose value can be specified later.
+Remember that we create symbolic placeholders for tensors `A` and `B` so we can feed with data later. We can do the same thing for the shape as well. In particular, the following code block uses `tvm.var` to create a symbolic variable for an `int32` scalar, whose value can be specified later.
 
 ```{.python .input  n=1}
 import d2ltvm

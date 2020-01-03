@@ -62,7 +62,7 @@ sizes = [(int(c), 64, 3) for c in channels]
 mxnet_gflops = bench_conv_mxnet(sizes)
 ```
 
-Similar to the `bench_matmul_tvm` method implemented in :numref:`ch_matmul_cpu`, we implement the reusable method to benchmark the convolution operator. Note that the first argument `func` here is a function that takes input argments `oc, ic, n, k, p, s` and returns the schedule as well as its corresonding tensor symbolic argments.
+Similar to the `bench_matmul_tvm` method implemented in :numref:`ch_matmul_cpu`, we implement the reusable method to benchmark the convolution operator. Note that the first argument `func` here is a function that takes input arguments `oc, ic, n, k, p, s` and returns the schedule as well as its corresponding tensor symbolic arguments.
 
 ```{.python .input}
 # Save to the d2ltvm package.

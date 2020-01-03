@@ -108,7 +108,7 @@ tvm_times = np.array([bench_workload(tvm_copy(n).timeit) for n in sizes])
 print('TVM call overhead: %.1f microsecond'% (tvm_times.mean()*1e6,))
 ```
 
-Compared to NumPy and TVM, MXNet has substentially higher overhead. The reason might due to MXNet uses `ctypes` while TVM is compiled with `cython`, and MXNet uses lazy evaluation that brings additional overhead.
+Compared to NumPy and TVM, MXNet has substantially higher overhead. The reason might due to MXNet uses `ctypes` while TVM is compiled with `cython`, and MXNet uses lazy evaluation that brings additional overhead.
 
 ```{.python .input  n=13}
 def mx_copy(n):

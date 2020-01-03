@@ -41,7 +41,7 @@ image = Image.open('../data/cat.jpg').resize((224, 224))
 image
 ```
 
-According to the [model zoo page](https://mxnet.apache.org/api/python/docs/api/gluon/model_zoo/index.html). Image pixes are normalized on each color channel, and the data layout is `(batch, RGB channels, height, width)`. The following function transforms the input image to satisfy the requirement.
+According to the [model zoo page](https://mxnet.apache.org/api/python/docs/api/gluon/model_zoo/index.html). Image pixels are normalized on each color channel, and the data layout is `(batch, RGB channels, height, width)`. The following function transforms the input image to satisfy the requirement.
 
 ```{.python .input  n=5}
 # Save to the d2ltvm package
@@ -60,7 +60,7 @@ x.shape
 
 To compile a model, we first express the MXNet model in Relay IR, which the `from_mxnet` method could help.
 In the method, we provide the model with the input data shape. Some neural networks may require some dimension(s) of the data shape to be determined later.
-Hoever, in ResNet model the data shape is fixed, which makes it easier for the compiler to acheive high performance.
+However, in ResNet model the data shape is fixed, which makes it easier for the compiler to achieve high performance.
 We will mostly stick to fixed data shape in the book. We only touch the dynamic data shape (i.e. some dimension(s) to be determined in runtime) in very late chapters.
 
 ```{.python .input  n=6}
@@ -68,7 +68,7 @@ relay_mod, relay_params = relay.frontend.from_mxnet(model, {'data': x.shape})
 type(relay_mod), type(relay_params)
 ```
 
-This method will return the program `relay_mod`, which is a `relay` module, and a dictionary of parameters `relay_params` that maps a string key to a TVM ndarray. Next, we lower the module to some lower-level IR which can be comsumed by `llvm` backend. [LLVM](https://en.wikipedia.org/wiki/LLVM) defines an IR that has been adopted by multiple programming languages. The LLVM compiler is then able to compile the generated programs into machine codes for CPUs. We have already used it to compile the vector addition operator in :numref:`ch_vector_add`, despite that we didn't explicitly specify it.
+This method will return the program `relay_mod`, which is a `relay` module, and a dictionary of parameters `relay_params` that maps a string key to a TVM ndarray. Next, we lower the module to some lower-level IR which can be consumed by `llvm` backend. [LLVM](https://en.wikipedia.org/wiki/LLVM) defines an IR that has been adopted by multiple programming languages. The LLVM compiler is then able to compile the generated programs into machine codes for CPUs. We have already used it to compile the vector addition operator in :numref:`ch_vector_add`, despite that we didn't explicitly specify it.
 
 In addition, we set the optimization level to the highest level 3. You may get warning messages that not every operator is well optimized, you can ignore it for now. We will get back to it later.
 

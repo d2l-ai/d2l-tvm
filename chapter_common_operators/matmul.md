@@ -1,6 +1,6 @@
 # Matrix Multiplication
 
-Matrix Multiplication is one of the most widely operators in scientific computing and deep learning,which is typically referred to as *GEMM* (GEneral Matrix Multiply). Let's implement its computation in this section.
+Matrix Multiplication is one of the most widely operators in scientific computing and deep learning, which is typically referred to as *GEMM* (GEneral Matrix Multiply). Let's implement its computation in this section.
 
 Given $A\in\mathbb R^{n\times l}$, and $B \in\mathbb R^{l\times m}$, if $C=AB$ then $C \in\mathbb R^{n\times m}$ and
 
@@ -57,5 +57,5 @@ np.testing.assert_allclose(np.dot(a.asnumpy(), b.asnumpy()),
 
 ## Summary
 
-- We can express the compututation of matrix multiplication in TVM in one line of code.
+- We can express the computation of matrix multiplication in TVM in one line of code.
 - The naive matrix multiplication is a 3-level nested for loop.

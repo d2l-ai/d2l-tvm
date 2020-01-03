@@ -91,7 +91,7 @@ def cached_block(n):
     s[C].parallel(xy)
     # Use the write cache for the output of the xy axis, namely a block.
     s[CachedC].compute_at(s[C], xy)
-    # Same as before to optimze the computation of a block .
+    # Same as before to optimize the computation of a block .
     xc, yc = s[CachedC].op.axis
     ko, ki = s[CachedC].split(CachedC.op.reduce_axis[0], factor=tk)
     s[CachedC].reorder(ko, xc, ki, yc)
@@ -111,7 +111,7 @@ d2ltvm.plot_gflops(sizes, [np_gflops, blocked_gflops, cached_gflops],
             ['numpy', 'block', '+cache'])
 ```
 
-We can see the the write cache improves the performance for matrix multiplicatin on large sizes.
+We can see the the write cache improves the performance for matrix multiplication on large sizes.
 
 ## Summary
 
