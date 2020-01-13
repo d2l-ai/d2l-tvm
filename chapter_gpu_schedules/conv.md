@@ -1,6 +1,6 @@
 # Convolution
 
-In this section, we will extend :numref:`ch_packed_conv_cpu` to optimize matrix multiplication on GPUs.
+In this section, we will extend :numref:`ch_packed_conv_cpu` to optimize convolution on GPUs.
 
 ```{.python .input  n=1}
 import d2ltvm
@@ -62,16 +62,16 @@ In our case, we specify the output tile (`YL`) and its corresponding input tiles
 ![Blocked tiling for convolution to put small tiles into shared and local memory of GPU.](../img/conv_thread_block.svg)
 :label:`fig_conv_thread_block`
 
-Under our tiling factors below, each thread needs to access $64$(`YL`)$+48$(`XL`)$+24$(`KL`)$=136$ 32-bit float. And in our setting each block contains $4 \times 2 \times 16 = 128$ threads, making the total occupied local memory registers to be $128 \times 136 = 17,408$, which is easy to be fit into one SM. Similarly, we can reason that `XX` and `KK` are fitable to the shared memory.
+Under our tiling factors below, each thread needs to access $64$(`YL`)$+48$(`XL`)$+24$(`KL`)$=136$ 32-bit floats. And in our setting each block contains $4 \times 2 \times 16 = 128$ threads, making the total occupied local memory registers to be $128 \times 136 = 17,408$, which is easy to be fit into one SM. Similarly, we can reason that `XX` and `KK` are fitable to the shared memory.
 
 In addition, as in the last section, we use cooperative fetching to local the data from GPU host memory to the shared memory in parallel.
 
 ```{.python .input  n=17}
 tile_c = [4, 8]
 tile_h = [2, 2]
-tile_w = [16, 4] # [32, 2] is worse than [16, 2]
+tile_w = [16, 4]
 tile_rc = [1, 1]
-tile_rh = [1, 1] # better than h=[1,1] w=[1,3], because of the bank conflict
+tile_rh = [1, 1]
 tile_rw = [1, 3]
 
 def split_axis(factors, sch, op, axis):
@@ -160,7 +160,7 @@ tvm_gflops = d2ltvm.bench_conv_tvm(tiling, sizes, target)
 tvm_gflops
 ```
 
-The performance increases over one order of magnitude which is already on par with our baseline. But we can still improve it by solving some bank conflict issue when accessing the data.
+The performance increases over one order of magnitude which is already on par with our baseline. We can still improve it by solving some bank conflict issue when accessing the data.
 
 ## Optimizing the data access on GPUs
 
@@ -180,22 +180,19 @@ Each bank can only handle a single request at a time, while these 32 banks are p
 ### Data Access Pattern
 Now let's analyze the read pattern of `XX` and `KK`. Note from :numref:`fig_conv_thread_block` that a thread reads a row segment of `XX` with a length of 4 consecutive numbers, which spread in 4 adjacent banks which causes severe bank conflict. The same thing applies to the reading of `KK`. 
 
-One way to mitigate this is to let the thread read in columns instead of rows, so each reading would have a stride, making the numbers to be read from one thread more spread among banks. :numref:`fig_conv_row_cloumn` shows the difference of the reading patterns from shared memory to local memory.
+One way to mitigate this is to let the thread read in columns instead of rows, so each reading would have a stride, making the numbers to be read from one thread more spread among banks. :numref:`fig_conv_row_column` shows the difference of the reading patterns from shared memory to local memory.
 
-![Blocked tiling for convolution to put small tiles into shared and local memory of GPU.](../img/conv_row_cloumn.svg)
-:label:`fig_conv_row_cloumn`
+![Different reading patterns from shared memory to local memory](../img/conv_row_column.svg)
+:label:`fig_conv_row_column`
 
 ### Virtual Threads 
 
-TVM provides another mechanism, called *virtual thread*, to further increase the data access stride to mitigate bank conflict. Let's revisit the thread structure we defined above. Each block has 32 threads in the `x` dimension, each processing 2 elements. It conceptually gets data in the pattern depicted in the left of :numref:`fig_conv_virtual_thread`.
+In addition, TVM provides another mechanism, called *virtual thread*, to further increase the data access stride to mitigate bank conflict. Let's revisit the thread structure we defined above. Each block has 16 threads in the `x` dimension, each thread processes 4 elements. It conceptually gets data in the pattern depicted in the left of :numref:`fig_conv_virtual_thread`.
 
-In order to let threads to process data in a spread manner, we can virtual threads to obtain strided data chunks. For example, we can first split the data into 2 parts to bind to 2 virtual threads. Then we further split the each part into 16 pieces to bind to 16 CUDA threads. As the first split belongs to virtual threads, in practice, the $i$-th CUDA thread in all virtual threads will be merged into a single one, so we will only get 16 CUDA threads instead of $16\times 2$ threads. In this case, each thread processes two spread data pieces as depicted in the right of :numref:`fig_conv_virtual_thread`.
+In order to let threads to process data in a spread manner, we can use virtual threads to obtain strided data chunks. For example, we can first split the data into 2 parts to bind to 2 virtual threads. Then we further split the each part into 16 pieces to bind to 16 CUDA threads. In practice, the $i$-th CUDA thread in all virtual threads will be merged into a single one, so we will only get 16 CUDA threads instead of $16 \times 2$ threads. In this case, each thread processes two spread data pieces as depicted in the right of :numref:`fig_conv_virtual_thread`.
 
 ![Virtual thread binding](../img/conv_virtual_thread.svg)
 :label:`fig_conv_virtual_thread`
-
-
-Since the generated pseudo codes could be long, we define a function to only return the lines matched a particular pattern.
 
 ```{.python .input  n=6}
 tile_c = [1, 4, 8]
@@ -282,16 +279,16 @@ d2ltvm.plot_gflops(channels, [mx_gflops, tvm_gflops], legend=['MXNet', 'TVM'])
 tvm_gflops
 ```
 
-From the figure we see that TVM outperforms MXNet in smaller channel sizes but MXNet becomes better as the number of channels increases. This is mostly because CuDNN used by MXNet has manually optimized implementation for different data shapes, but here we use only one scheduling strategy for convolution kernels in different sizes.
+From the figure we see that TVM outperforms MXNet in smaller channel sizes but MXNet becomes better as the number of channels increases. This is mostly because cuDNN used by MXNet has manually optimized implementation for different data shapes, but here we use only one scheduling strategy for convolution kernels in different sizes.
 
-You may wonder how we can choose different schedules for convolutions of different data sizes, and even better, if we can automate the choice of schedules given a speficic set of data shapes for convolution. We will talk about these techniques later.
+You may wonder how we can choose different schedules for convolutions of different data sizes, and even better, if we can automate the choice of schedules given a specific set of data shapes for convolution. We will talk about these techniques later.
 
-In addition, there are ways that one can do to further increase the performance. For example, data fetching ...
+In addition, there are ways that one can do to further increase the performance. For example, we can try to avoid all bank conflict by making the data reading stride always a multiple of 32. However, these tricks may be ad hoc and require intensive programming efforts. Our goal is to come up with some more high-level and generic scheduling scheme to achieve the reasonable performance.
 
 ## Summary
 - We leverage the memory hierachy of GPU to tile the data for better convolution performance.
 - We carefully manipulate the data access pattern to mitigate bank conflict which harms the performance.
 
-## Excersise
+## Exercise
 - Try our different factors to split the axes and observe the performance difference.
 - Vary the size of input data and observe the performance difference.
