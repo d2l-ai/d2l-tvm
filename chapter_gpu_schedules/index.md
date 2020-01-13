@@ -10,4 +10,5 @@ The chapter talks about the opeaator optimization on Nvidia GPUs. Basically, we 
 arch
 vector_add
 matmul
+conv
 ```
