@@ -3,7 +3,7 @@
 **Working in progress**. Check our [roadmap](http://bit.ly/2NQ7gh3) for more details.
 
 This project is for readers who are interested in high-performance
-implementation of their programs ultilizing deep learning techniques, especially model inference,
+implementation of their programs utilizing deep learning techniques, especially model inference,
 but may not have got their hands dirty yet. We assume
 readers have a minimal background of only having experience on NumPy before. With this in mind,
 we will explain things from scratch and introduce relative background when needed. Experienced

@@ -1,3 +1,3 @@
-# Nerual Networks
+# Neural Networks
 
 A place holder

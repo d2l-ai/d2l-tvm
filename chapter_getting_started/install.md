@@ -61,7 +61,7 @@ Also
 don't forget to enable `cython`, which accelerates the performance. You just
 need to run `make cython` in the TVM source folder.
 
-If luckly you are using Ubuntu with `python-3.7`, `llvm-6.0` and `cuda-10.1` installed, you
+If luckily you are using Ubuntu with `python-3.7`, `llvm-6.0` and `cuda-10.1` installed, you
 may use the pre-built library that is for evaluating this book:
 
 ```bash

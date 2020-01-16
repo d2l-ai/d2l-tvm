@@ -41,7 +41,7 @@ image = Image.open('../data/cat.jpg').resize((224, 224))
 image
 ```
 
-According to the [model zoo page](https://mxnet.apache.org/api/python/docs/api/gluon/model_zoo/index.html). Image pixes are normalized on each color channel, and the data layout is `(batch, RGB channels, height, width)`. The following function transforms the input image to satisfy the requirement.
+According to the [model zoo page](https://mxnet.apache.org/api/python/docs/api/gluon/model_zoo/index.html). Image pixels are normalized on each color channel, and the data layout is `(batch, RGB channels, height, width)`. The following function transforms the input image to satisfy the requirement.
 
 ```{.python .input  n=5}
 # Save to the d2ltvm package

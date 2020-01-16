@@ -1,6 +1,6 @@
 # Matrix Multiplication
 
-Matrix Multiplication is one of the most widely operators in scientific computing and deep learning,which is typically referred to as *GEMM* (GEneral Matrix Multiply). Let's implement its computation in this section.
+Matrix Multiplication is one of the most widely operators in scientific computing and deep learning, which is typically referred to as *GEMM* (GEneral Matrix Multiply). Let's implement its computation in this section.
 
 Given $A\in\mathbb R^{n\times l}$, and $B \in\mathbb R^{l\times m}$, if $C=AB$ then $C \in\mathbb R^{n\times m}$ and
 

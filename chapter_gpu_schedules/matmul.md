@@ -109,7 +109,7 @@ def bind_thread(stage, axes, tags):
         stage.bind(axis, tvm.thread_axis(tag))
 ```
 
-Next we specify the hyperparamters with values we described before.
+Next we specify the hyperparameters with values we described before.
 
 ```{.python .input}
 block_size = 16  # the number of threads for one dimension in a thread block.

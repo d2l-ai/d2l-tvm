@@ -91,7 +91,7 @@ def cached_block(n):
     s[C].parallel(xy)
     # Use the write cache for the output of the xy axis, namely a block.
     s[CachedC].compute_at(s[C], xy)
-    # Same as before to optimze the computation of a block .
+    # Same as before to optimize the computation of a block .
     xc, yc = s[CachedC].op.axis
     ko, ki = s[CachedC].split(CachedC.op.reduce_axis[0], factor=tk)
     s[CachedC].reorder(ko, xc, ki, yc)
