@@ -144,7 +144,7 @@ Comparing the results we obtained before, parallelization significantly improves
 
 A single core may have SIMD units to run multiple arithmetic operations at the same time as we saw in :numref:`ch_cpu_arch`. Although one iteration in the above loop only has a single add operation, we can explicitly allocate more operations within an iteration, and ask the compiler to use SIMD instructions to process them.
 
-The way to do it is first splitting the one-level for-loop into a two-level nested for-loop using a `factor`. The inner loop consists of `factor` original iterations that will be grouped together accordingly to execute in SIMD intructions on a core. And iterations in the outer loop still run in parallel.
+The way to do it is first splitting the one-level for-loop into a two-level nested for-loop using a `factor`. The inner loop consists of `factor` original iterations that will be grouped together accordingly to execute in SIMD instructions on a core. And iterations in the outer loop still run in parallel.
 
 ```{.python .input}
 def vectorized(n):
