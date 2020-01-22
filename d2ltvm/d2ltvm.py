@@ -49,6 +49,46 @@ def image_preprocessing(image):
     return image.astype('float32')
 
 
+# Defined in file: ./chapter_common_operators/broadcast_add.md
+def broadcast_add(shape1, shape2):
+    """Broadcast add between two 2-dimensional tensors
+
+    shape1, shape2 : the shapes of the input tensors
+    """
+    assert len(shape1) == 2 and len(shape2) == 2, \
+        "broadcast tensors should both be 2-dimension"
+    for i in range(len(shape1)):
+        assert shape1[i] == shape2[i] or shape1[i] == 1 or shape2[i] == 1, \
+            "tensor shapes do not fit for broadcasting"
+    A = tvm.placeholder(shape1, name='A')
+    B = tvm.placeholder(shape2, name='B')
+    m = shape1[0] if shape2[0] == 1 else shape2[0]
+    n = shape1[1] if shape2[1] == 1 else shape2[1]
+    f = lambda x, y: A[0 if shape1[0]==1 else x, 0 if shape1[1]==1 else y] + \
+        B[0 if shape2[0]==1 else x, 0 if shape2[1]==1 else y]
+    C = tvm.compute((m, n), f, name='C')
+    return A, B, C
+
+
+# Defined in file: ./chapter_common_operators/broadcast_add.md
+def get_bcast_data(shape1, shape2, constructor=None):
+    """Return random tensors a, b 
+    and empty tensor c to store broadcast results between a and b
+
+    shape1, shape2: shapes of input tensors
+    constructor : user-defined tensor constructor
+    """
+    np.random.seed(0)
+    a = np.random.normal(size=shape1).astype("float32")
+    b = np.random.normal(size=shape2).astype("float32")
+    out_shape = (shape1[0] if shape2[0] == 1 else shape2[0], 
+                 shape1[1] if shape2[1] == 1 else shape2[1])
+    c = np.empty(out_shape, dtype='float32')
+    if constructor:
+        a, b, c = [constructor(x) for x in (a, b, c)]
+    return a, b, c
+
+
 # Defined in file: ./chapter_common_operators/matmul.md
 def matmul(n, m, l):
     """Return the computing expression of matrix multiplication

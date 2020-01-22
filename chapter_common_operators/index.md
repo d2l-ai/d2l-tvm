@@ -5,6 +5,7 @@ In last chapter, we went over how to implement the basic expressions/operators u
 ```toc
 :maxdepth: 2
 
+broadcast_add
 matmul
 conv
 ```
