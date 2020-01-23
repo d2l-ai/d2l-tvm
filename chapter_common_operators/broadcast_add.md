@@ -1,4 +1,5 @@
 # Broadcast Add
+:label:`ch_bcast_add`
 
 A broadcast operator process two tensors in different shapes. Normally, one of the operands has a particular dimension to be 1, which will be broadcast along the corresponding dimension of the other operator to perform the given calculation. Common scalar calculations can all be broadcast, such as elementary arithmetic and logical operations. :numref:`fig_bcast_add` illustrates one broadcast add case between two 2-dimensional tensors. Broadcast operators are commonly seen in deep learning workloads, e.g. [batch normalization](http://d2l.ai/chapter_convolutional-modern/batch-norm.html).
 
