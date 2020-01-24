@@ -1,7 +1,7 @@
-# Vector Addition
+# Vector Add
 :label:`ch_vector_add_cpu`
 
-In this section, we will optimize the vector addition defined in :numref:`ch_vector_add` on CPU.
+In this section, we will optimize the vector add defined in :numref:`ch_vector_add` on CPU.
 
 ## Setup
 
@@ -42,8 +42,8 @@ def plot(X, Y, xlabel=None, ylabel=None, legend=[], xlim=None,
     axes.grid()
 
 # Save to the d2ltvm package
-def plot_gflops(sizes, gflops, legend):
-    d2ltvm.plot(sizes, gflops, xlabel='Size', ylabel='GFLOPS',
+def plot_gflops(sizes, gflops, legend, xlabel='Size'):
+    d2ltvm.plot(sizes, gflops, xlabel=xlabel, ylabel='GFLOPS',
              xscale='log', yscale='log',
              legend=legend, fmts=['--']*(len(gflops)-1)+['-'])
 ```
@@ -61,7 +61,7 @@ np_gflops = sizes / 1e9 / np.array(exe_times)
 plot_gflops(sizes, [np_gflops], ['numpy'])
 ```
 
-As we can see that the performance first increases with the vector length, which is due to the system overhead domination when the workload is small. The performance then decreases when we cannot fit all data into the last level cache.
+As we can see that the performance first increases with the vector length, which is due to the system overhead domination when the workload is small. The performance then decreases when we cannot fit all data into the cache.
 
 ## Default Schedule
 
@@ -103,7 +103,7 @@ mod = tvm.build(s, args, target)
 print(mod.get_source()[:500])
 ```
 
-You may find it not quite readable if you are not familiar with LLVM IR. But you don't need to worry much as in most cases, only reading the C-like pseudo codes is sufficient to study the performance. Now let's benchmark the default schedule.
+You may find it not quite readable if you are not familiar with LLVM IR. But you don't need to worry much as in most cases, only reading the C-like pseudo code is sufficient to study the performance. Now let's benchmark the default schedule.
 
 ```{.python .input  n=6}
 default_gflops = bench_vector_add_tvm(default, sizes, target)
@@ -114,7 +114,7 @@ When the vector size is small, the default scheduling outperforms NumPy, which m
 
 ## Parallelization
 
-One important optimization that is not enabled by default is thread-level parallelization. The vector addition operator is an [embarrassingly parallel workload](https://en.wikipedia.org/wiki/Embarrassingly_parallel), we can just change the for-loop into a parallel for-loop. In TVM, we first obtain the scheduler for the output symbol `C` by `s[C]`, and then impose the parallelization of the computation to its first axis, which is `C.op.axis[0]`.
+One important optimization that is not enabled by default is thread-level parallelization. The vector add operator is an [embarrassingly parallel workload](https://en.wikipedia.org/wiki/Embarrassingly_parallel), we can just change the for-loop into a parallel for-loop. In TVM, we first obtain the scheduler for the output symbol `C` by `s[C]`, and then impose the parallelization of the computation to its first axis, which is `C.op.axis[0]`.
 
 ```{.python .input  n=7}
 def parallel(n):
@@ -138,7 +138,7 @@ plot_gflops(sizes, [np_gflops, default_gflops, parallel_gflops],
      ['numpy', 'default', 'parallel'])
 ```
 
-Comparing the results we obtained before, parallelization significantly improves the performance when the workloads are large, e.g. vector lengths beyond $10^4$. However, the parallelization overhead impact the performance for small workloads, where single thread is even faster.
+Comparing the results we obtained before, parallelization significantly improves the performance when the workloads are large, e.g. vector lengths beyond $10^4$. However, the parallelization overhead impact the performance for small workloads, where single thread is even faster. The performance drops at a larger size as multi-core comes in play, leading to a larger amount of L2 cache in total.
 
 ## Vectorization
 
@@ -158,7 +158,7 @@ s, args = vectorized(64)
 print(tvm.lower(s, args, simple_mode=True))
 ```
 
-We can see that the outer for-loop is reduced to 8 iterations, while the inner for-loop is vectorized by `ramp` with a stride of 1 and width of 8. The definition of `ramp` is inherited from [Halide}(https://halide-lang.org/docs/struct_halide_1_1_internal_1_1_ramp.html).
+We can see that the outer for-loop is reduced to 8 iterations, while the inner for-loop is vectorized by `ramp` with a stride of 1 and width of 8. The definition of `ramp` is inherited from [Halide](https://halide-lang.org/docs/struct_halide_1_1_internal_1_1_ramp.html).
 
 Again, we check the performance of vectorization and plot the comparison diagram via the following code block.
 
@@ -168,7 +168,7 @@ plot_gflops(sizes, [np_gflops, default_gflops, parallel_gflops, vectorized_gflop
      ['numpy', 'default', 'parallel', 'vectorized'])
 ```
 
-The performance of the vectorized version is almost as the plain parallelization version. It's partially because the vector addition is bottlenecked by memory bandwidth instead of computation, while SIMD only helps the latter. We will see it helps more on computation intensive workloads such as matrix multiplication later.
+The performance of the vectorized version is almost as the plain parallelization version. It's partially because the vector add is bottlenecked by memory bandwidth instead of computation, while SIMD only helps the latter. We will see it helps more on computation intensive workloads such as matrix multiplication later.
 
 ## Summary
 

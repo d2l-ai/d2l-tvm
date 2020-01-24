@@ -33,7 +33,7 @@ def get_abc(shape, constructor=None):
 
 # Defined in file: ./chapter_getting_started/vector_add.md
 def vector_add(n):
-    """TVM expression for vector addition"""
+    """TVM expression for vector add"""
     A = tvm.placeholder((n,), name='a')
     B = tvm.placeholder((n,), name='b')
     C = tvm.compute(A.shape, lambda i: A[i] + B[i], name='c')
@@ -236,8 +236,8 @@ def plot(X, Y, xlabel=None, ylabel=None, legend=[], xlim=None,
 
 
 # Defined in file: ./chapter_cpu_schedules/vector_add.md
-def plot_gflops(sizes, gflops, legend):
-    d2ltvm.plot(sizes, gflops, xlabel='Size', ylabel='GFLOPS',
+def plot_gflops(sizes, gflops, legend, xlabel='Size'):
+    d2ltvm.plot(sizes, gflops, xlabel=xlabel, ylabel='GFLOPS',
              xscale='log', yscale='log',
              legend=legend, fmts=['--']*(len(gflops)-1)+['-'])
 

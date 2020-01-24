@@ -12,6 +12,7 @@ Starting from this chapter, we will talk about the performance optimization to t
 arch
 call_overhead
 vector_add
+broadcast_add
 matmul
 block_matmul
 conv

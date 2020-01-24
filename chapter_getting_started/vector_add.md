@@ -1,4 +1,4 @@
-# Vector Addition
+# Vector Add
 :label:`ch_vector_add`
 
 Now you have installed all libraries, let's write our first program: summing two `n`-dimensional vectors `a` and `b`. It's straightforward in NumPy, where we can do it by `c = a + b`.
@@ -63,7 +63,7 @@ import tvm
 
 # Save to the d2ltvm package.
 def vector_add(n):
-    """TVM expression for vector addition"""
+    """TVM expression for vector add"""
     A = tvm.placeholder((n,), name='a')
     B = tvm.placeholder((n,), name='b')
     C = tvm.compute(A.shape, lambda i: A[i] + B[i], name='c')
