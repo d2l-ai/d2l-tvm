@@ -71,7 +71,7 @@ print(b)
 
 ## Slicing
 
-Now let's consider a special slicing operator `a[bi::si, bj::si] ` where `bi`, `bj`, `si` and `sj` can be specified later. Now the output shape needs to be computed based on the arguments. In addition, we need to pass the variables `bi`, `bj`, `si` and `sj` as arguments when compiling the module.
+Now let's consider a special slicing operator `a[bi::si, bj::sj] ` where `bi`, `bj`, `si` and `sj` can be specified later. Now the output shape needs to be computed based on the arguments. In addition, we need to pass the variables `bi`, `bj`, `si` and `sj` as arguments when compiling the module.
 
 ```{.python .input}
 bi, bj, si, sj = [tvm.var(name) for name in ['bi', 'bj', 'si', 'sj']]
