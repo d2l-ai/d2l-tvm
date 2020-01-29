@@ -40,6 +40,7 @@ Note that the x axis is denoted as the total data size consumed. The performance
 The following code block defines a benchmarking method for broadcast add of a specific pattern in TVM. It follows the same format we discussed in :numref:`ch_vector_add_cpu`.
 
 ```{.python .input  n=8}
+# Save to the d2ltvm package.
 def bench_bcast_add_tvm(func, sizes, target):
     def workload(nrepeats):
         timer = mod.time_evaluator(mod.entry_name, ctx=ctx, number=nrepeats)
