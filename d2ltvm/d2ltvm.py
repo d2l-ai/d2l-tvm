@@ -257,6 +257,22 @@ def bench_vector_add_tvm(func, sizes, target):
     return sizes / 1e9 / np.array(times)
 
 
+# Defined in file: ./chapter_cpu_schedules/broadcast_add.md
+def bench_bcast_add_tvm(func, sizes, target):
+    def workload(nrepeats):
+        timer = mod.time_evaluator(mod.entry_name, ctx=ctx, number=nrepeats)
+        return timer(a, b, c).mean * nrepeats
+    times = []
+    for n in sizes:
+        n = int(n)
+        s, (A, B, C) = func(n)
+        mod = tvm.build(s, [A, B, C], target)
+        ctx = tvm.context(target, 0)
+        a, b, c = d2ltvm.get_bcast_data((n, 1), (n, n), lambda x: tvm.nd.array(x, ctx=ctx))
+        times.append(d2ltvm.bench_workload(workload))
+    return sizes * sizes / 1e9 / np.array(times)
+
+
 # Defined in file: ./chapter_cpu_schedules/matmul.md
 def np_matmul_timer(n):
     timer = timeit.Timer(setup='import numpy as np\n'

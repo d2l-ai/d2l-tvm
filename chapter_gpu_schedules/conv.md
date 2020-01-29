@@ -1,4 +1,5 @@
 # Convolution
+:label:`ch_conv_gpu`
 
 In this section, we will extend :numref:`ch_packed_conv_cpu` to optimize convolution on GPUs.
 
@@ -55,14 +56,14 @@ The default scheduling gives us the performance around 100 GFLOPS.
 
 ## Tiling
 
-As described in the last section, we can do tiling and bring the data to the shared and local memory of the GPU explicitly to improve the performance. Specifically, we tile three dimensions of the output (channel, height and width) as well as the three reduce dimensions (input channel, kernel height and kernel width). For the output dimensions, we split each of them into three parts for block binding, thread binding and CUDA kernel processing, respectively. The spliting factors are chosen to make sure the data can be fit into the shared and local memory of the GPU.
+As described in the last section, we can do tiling and bring the data to the shared and local memory of the GPU explicitly to improve the performance. Specifically, we tile three dimensions of the output (channel, height and width) as well as the three reduce dimensions (input channel, kernel height and kernel width). For the output dimensions, we split each of them into three parts for block binding, thread binding and CUDA kernel processing, respectively. The splitting factors are chosen to make sure the data can be fit into the shared and local memory of the GPU.
 
 In our case, we specify the output tile (`YL`) and its corresponding input tiles (`XL` and `KL`) to the local memory, and the tiled input data (`XX`) and kernel (`KK`) to the shared memory. :numref:`fig_conv_thread_block` shows how the tiling works for convolution.
 
 ![Blocked tiling for convolution to put small tiles into shared and local memory of GPU.](../img/conv_thread_block.svg)
 :label:`fig_conv_thread_block`
 
-Under our tiling factors below, each thread needs to access $64$(`YL`)$+48$(`XL`)$+24$(`KL`)$=136$ 32-bit floats. And in our setting each block contains $4 \times 2 \times 16 = 128$ threads, making the total occupied local memory registers to be $128 \times 136 = 17,408$, which is easy to be fit into one SM. Similarly, we can reason that `XX` and `KK` are fitable to the shared memory.
+Under our tiling factors below, each thread needs to access $64$(`YL`)$+48$(`XL`)$+24$(`KL`)$=136$ 32-bit floats. And in our setting each block contains $4 \times 2 \times 16 = 128$ threads, making the total occupied local memory registers to be $128 \times 136 = 17,408$, which is easy to be fit into one SM. Similarly, we can reason that `XX` and `KK` are fittable to the shared memory.
 
 In addition, as in the last section, we use cooperative fetching to local the data from GPU host memory to the shared memory in parallel.
 
@@ -286,7 +287,7 @@ You may wonder how we can choose different schedules for convolutions of differe
 In addition, there are ways that one can do to further increase the performance. For example, we can try to avoid all bank conflict by making the data reading stride always a multiple of 32. However, these tricks may be ad hoc and require intensive programming efforts. Our goal is to come up with some more high-level and generic scheduling scheme to achieve the reasonable performance.
 
 ## Summary
-- We leverage the memory hierachy of GPU to tile the data for better convolution performance.
+- We leverage the memory hierarchy of GPU to tile the data for better convolution performance.
 - We carefully manipulate the data access pattern to mitigate bank conflict which harms the performance.
 
 ## Exercise

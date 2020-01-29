@@ -1,7 +1,7 @@
-# Vector Addition
+# Vector Add
 :label:`ch_vector_add_gpu`
 
-In this section, we will optimize the vector addition defined in :numref:`ch_vector_add` on GPUs. As we have seen in :numref:`ch_gpu_arch`, the overall architecture of GPUs is not significantly different from CPUs, but GPUs often have more cores and wider SIMD units. If you are new to GPU programming, we recommend you to first read how we optimized the vector addition on CPUs in :numref:`ch_vector_add_cpu` for more contexts.
+In this section, we will optimize the vector add defined in :numref:`ch_vector_add` on GPUs. As we have seen in :numref:`ch_gpu_arch`, the overall architecture of GPUs is not significantly different from CPUs, but GPUs often have more cores and wider SIMD units. If you are new to GPU programming, we recommend you to first read how we optimized the vector add on CPUs in :numref:`ch_vector_add_cpu` for more contexts.
 
 ```{.python .input  n=1}
 %matplotlib inline
@@ -33,7 +33,7 @@ d2ltvm.plot_gflops(sizes, [mx_gflops], ['mxnet'])
 
 CUDA is a programming interface proposed by Nvidia for high-performance parallel programming on GPUs. TVM provides an abstraction level above CUDA so that we don't bother to know the details about CUDA programming. We still, however, need to understand several concepts that are specific to CUDA. 
 
-The first one is *CUDA kernel*, or simply *kernel*. A kernel is a small program or a function. In TVM, it's often the Lambda expression to compute elements of the output tensor, e.g. `lambda i: A[i] + B[i]` in vector addition.
+The first one is *CUDA kernel*, or simply *kernel*. A kernel is a small program or a function. In TVM, it's often the Lambda expression to compute elements of the output tensor, e.g. `lambda i: A[i] + B[i]` in vector add.
 
 The second one is *CUDA thread*, or simply *thread*. A thread is an abstracted entity that represents the execution of a kernel. Note that it's a programming abstract, not the aforementioned logic or hardware thread which actually runs. So if the vector length is 1 million, we will have 1 million threads, but apparently we cannot run all of them simultaneously. 
 
@@ -47,7 +47,7 @@ $$i = \text{blockIdx.x} \times \text{blockDim.x} \times \text{blockDim.y} \times
 
 During execution, all threads in a single block will be executed in the same core, or streaming multiprocessor (SM). We could assume that they will be executed simultaneously so we can synchronize these threads in the middle of a kernel. Different blocks may run on different cores. 
 
-In analogy to CPUs, we parallelize thread blocks on a GPU is like we parallelize over CPU threads, while a thread block runs the workload that could be vectorized. Remember that in the last part of :numref:`ch_vector_add_cpu` we split the for-loop for vector addition for parallelization and vectorization separately, we can do it similarly in GPUs programming.
+In analogy to CPUs, we parallelize thread blocks on a GPU is like we parallelize over CPU threads, while a thread block runs the workload that could be vectorized. Remember that in the last part of :numref:`ch_vector_add_cpu` we split the for-loop for vector add for parallelization and vectorization separately, we can do it similarly in GPUs programming.
 
 ```{.python .input  n=3}
 nt = 64  # number of threads in a block
