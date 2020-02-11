@@ -192,6 +192,7 @@ np.testing.assert_allclose(out_mx[0].asnumpy(), out.asnumpy(), atol=1e-5)
 
 ## Summary
 
-- We can express the computation of 2-D convolution in TVM fairly easy.
+- We can express the computation of 2-D convolution in TVM in a fairly easy way.
 - Deep learning workloads normally operate 2-D convolution on 4-D data tensors and kernel tensors.
 - The naive matrix multiplication is a 6-level nested for loop.
+
