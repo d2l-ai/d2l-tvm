@@ -124,7 +124,6 @@ def conv(oc, ic, nh, nw, kh, kw, ph=0, pw=0, sh=1, sw=1):
 Just as what we created `get_abc` in :numref:`ch_vector_add`, we define a method to get the input and output tensors. Again, we fix the random seed so it returns the same results if calling multiple times.
 
 ```{.python .input}
-# Save to the d2ltvm package.
 def get_conv_data(oc, ic, n, k, p=0, s=1, constructor=None):
     """Return random 3-D data tensor, 3-D kernel tenor and empty 3-D output 
     tensor with the shapes specified by input arguments.
@@ -159,14 +158,14 @@ print(tvm.lower(sch, [X, K, Y], simple_mode=True))
 data, weight, out = get_conv_data(oc, ic, n, k, p, s, tvm.nd.array)
 mod(data, weight, out)
 ```
+
 In the last code block we also print out the pseudo code of a 2-D convolution, which is a naive 6-level nested for loop.
 
-Since NumPy only has a convolution for vectors, we use MXNet's convolution operator to as the ground truth. The following code block defines the data generating function and a wrap function to call the convolution operator. Then we can feed the same tensors to compute the results in MXNet.
+Since NumPy only has a convolution for vectors, we use MXNet's convolution operator as the ground truth. The following code block defines the data generating function and a wrap function to call the convolution operator. Then we can feed the same tensors to compute the results in MXNet.
 
 ```{.python .input}
 import mxnet as mx
 
-# Save to the d2ltvm package.
 def get_conv_data_mxnet(oc, ic, n, k, p, s, ctx='cpu'):
     ctx = getattr(mx, ctx)()
     data, weight, out = get_conv_data(oc, ic, n, k, p, s,
@@ -194,5 +193,4 @@ np.testing.assert_allclose(out_mx[0].asnumpy(), out.asnumpy(), atol=1e-5)
 
 - We can express the computation of 2-D convolution in TVM in a fairly easy way.
 - Deep learning workloads normally operate 2-D convolution on 4-D data tensors and kernel tensors.
-- The naive matrix multiplication is a 6-level nested for loop.
-
+- The naive 2-D convolution is a 6-level nested for loop.

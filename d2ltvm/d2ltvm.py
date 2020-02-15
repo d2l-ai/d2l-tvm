@@ -160,7 +160,13 @@ def conv(oc, ic, nh, nw, kh, kw, ph=0, pw=0, sh=1, sw=1):
 
 
 # Defined in file: ./chapter_common_operators/conv.md
-def get_conv_data(oc, ic, n, k, p=0, s=1, constructor=None):
+def conv_mxnet(data, weight, bias, out, k, p, s):
+    mx.nd.Convolution(data, weight, bias, kernel=(k,k), stride=(s,s),
+                      pad=(p,p), num_filter=out.shape[1], out=out)
+
+
+# Defined in file: ./chapter_common_operators/depthwise_conv.md
+def get_conv_data(oc, ic, n, k, p=0, s=1, constructor=None, conv_type='direct'):
     """Return random 3-D data tensor, 3-D kernel tenor and empty 3-D output 
     tensor with the shapes specified by input arguments.
 
@@ -169,32 +175,67 @@ def get_conv_data(oc, ic, n, k, p=0, s=1, constructor=None):
     k : kernel width and height
     p : padding size, default 0
     s : stride, default 1
+    conv_type: either direct 2D or depthwise, default direct
     constructor : user-defined tensor constructor
     """
     np.random.seed(0)
     data = np.random.normal(size=(ic, n, n)).astype('float32')
-    weight = np.random.normal(size=(oc, ic, k, k)).astype('float32')
-    on = conv_out_size(n, k, p, s)
+    ic_weight = ic
+    if conv_type == 'depthwise':
+        ic_weight = 1
+    weight = np.random.normal(size=(oc, ic_weight, k, k)).astype('float32')
+    on = d2ltvm.conv_out_size(n, k, p, s)
     out = np.empty((oc, on, on), dtype='float32')
     if constructor:
         data, weight, out = (constructor(x) for x in [data, weight, out])
     return data, weight, out
 
 
-# Defined in file: ./chapter_common_operators/conv.md
-def get_conv_data_mxnet(oc, ic, n, k, p, s, ctx='cpu'):
+# Defined in file: ./chapter_common_operators/depthwise_conv.md
+def depthwise_conv(ic, nh, nw, kh, kw, ph=0, pw=0, sh=1, sw=1):
+    """Convolution
+
+    ic : number of channels for both input and output
+    nh, nw : input width and height
+    kh, kw : kernel width and height
+    ph, pw : height and width padding sizes, default 0
+    sh, sw : height and width strides, default 1
+    """
+    # reduction axes
+    rkh = tvm.reduce_axis((0, kh), name='rkh')
+    rkw = tvm.reduce_axis((0, kw), name='rkw')
+    # output height and weights
+    oh = conv_out_size(nh, kh, ph, sh)
+    ow = conv_out_size(nw, kw, pw, sw)
+    # pad X and then compute Y
+    X = tvm.placeholder((ic, nh, nw), name='X')
+    K = tvm.placeholder((ic, 1, kh, kw), name='K')
+    PaddedX = padding(X, ph, pw) if ph * pw != 0 else X
+    Y = tvm.compute(
+        (ic, oh, ow),
+        lambda c, i, j: tvm.sum(
+            (PaddedX[c, i*sh+rkh, j*sw+rkw] * K[c, 0, rkh, rkw]),
+            axis=[rkh, rkw]), name='Y')
+    
+    return X, K, Y, PaddedX
+
+
+# Defined in file: ./chapter_common_operators/depthwise_conv.md
+def get_conv_data_mxnet(oc, ic, n, k, p, s, ctx='cpu', conv_type='direct'):
     ctx = getattr(mx, ctx)()
-    data, weight, out = get_conv_data(oc, ic, n, k, p, s,
-                                      lambda x: mx.nd.array(x, ctx=ctx))
+    data, weight, out = get_conv_data(oc, ic, n, k, p, s, 
+                                      constructor=lambda x: mx.nd.array(x, ctx=ctx),
+                                      conv_type=conv_type)
     data, out = data.expand_dims(axis=0), out.expand_dims(axis=0)
     bias = mx.nd.zeros(out.shape[1], ctx=ctx)
     return data, weight, bias, out
 
 
-# Defined in file: ./chapter_common_operators/conv.md
-def conv_mxnet(data, weight, bias, out, k, p, s):
+# Defined in file: ./chapter_common_operators/depthwise_conv.md
+def depthwise_conv_mxnet(data, weight, bias, out, k, p, s):
     mx.nd.Convolution(data, weight, bias, kernel=(k,k), stride=(s,s),
-                      pad=(p,p), num_filter=out.shape[1], out=out)
+                      pad=(p,p), num_filter=out.shape[1], 
+                      out=out, num_group=weight.shape[0])
 
 
 # Defined in file: ./chapter_cpu_schedules/call_overhead.md
