@@ -130,7 +130,7 @@ def get_conv_data_mxnet(oc, ic, n, k, p, s, ctx='cpu', conv_type='direct'):
     return data, weight, bias, out
 ```
 
-Then we do the computation and compare with the TVM result.
+Then we do the computation and compare with the TVM result. Note that the weight size is `[oc, 1, kh, kw]` as the number of groups equals the number of channels, i.e. each kernel only corresponds to one channel of the data, as what we are doing in TVM.
 
 ```{.python .input}
 # Save to the d2ltvm package.
