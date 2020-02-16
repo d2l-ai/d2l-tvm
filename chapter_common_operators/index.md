@@ -8,4 +8,5 @@ In last chapter, we went over how to implement the basic expressions/operators u
 broadcast_add
 matmul
 conv
+depthwise_conv
 ```
