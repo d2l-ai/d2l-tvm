@@ -48,7 +48,7 @@ def conv_pack(oc, ic, nh, nw, kh, kw, ph, pw, toc, tic):
         lambda ic_out, x, y, ic_in: PaddedX[ic_out*tic + ic_in, x, y],
         name='PackedX')
     PackedK = tvm.compute(
-        (oc//toc, ic//tic, nh, nw, tic, toc),
+        (oc//toc, ic//tic, kh, kw, tic, toc),
         lambda oc_out, ic_out, x, y, ic_in, oc_in: K[
             oc_out*toc + oc_in, ic_out*tic + ic_in, x, y],
         name='PackedK')
@@ -74,7 +74,7 @@ def conv(oc, ic, nh, nw, kh, kw, ph, pw, sh, sw, toc, tic):
     """2-D conv
 
     oc, ic : output and input channels.
-    h, w : input width and height
+    nh, nw : input width and height
     kh, kw : kernel width and height
     ph, pw : height and width padding
     sh, sw : height and width strides
