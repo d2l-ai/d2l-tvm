@@ -394,6 +394,51 @@ def bench_conv_tvm(func, sizes, target):
     return np.array(gflops) / np.array(times)
 
 
+# Defined in file: ./chapter_cpu_schedules/depthwise_conv.md
+def bench_depthwise_conv_tvm(func, sizes, target):
+    def workload(nrepeats):
+        timer = mod.time_evaluator(mod.entry_name, ctx=ctx, number=nrepeats)
+        return timer(x, k, y).mean * nrepeats
+    gflops, times = [], []
+    for (c, n, k) in sizes:
+        args = c, n, k, (k-1)//2, 1 # c, n, k, p, s
+        s, (X, K, Y) = func(*args)
+        mod = tvm.build(s, [X, K, Y], target)
+        ctx = tvm.context(target, 0)
+        x, k, y = d2ltvm.get_conv_data(
+            args[0], *args, lambda x: tvm.nd.array(x, ctx=ctx), conv_type='depthwise')
+        times.append(d2ltvm.bench_workload(workload))
+        gflops.append(d2ltvm.conv_gflop(1, *args))
+    return np.array(gflops) / np.array(times)
+
+
+# Defined in file: ./chapter_cpu_schedules/depthwise_conv.md
+def depthwise_conv_timer_mxnet(c, n, k, ctx):
+    """Benchmark convolution in MXNet
+
+    c : input, output channels
+    n : input width and height
+    k : kernel width and height
+    """
+    timer = timeit.Timer(
+        setup='import d2ltvm\n'
+        'import mxnet as mx\n'
+        'c, n, k, p, s = %d, %d, %d, %d, 1\n'
+        'data, weight, bias, out = d2ltvm.get_conv_data_mxnet(\n'
+        '    c, c, n, k, p, s, "%s", "%s")'%(c, n, k, (k-1)//2, ctx, 'depthwise'),
+        stmt='d2ltvm.depthwise_conv_mxnet(data, weight, bias, out, k, p, s);'
+        'out.wait_to_read()')
+    return timer.timeit
+
+
+# Defined in file: ./chapter_cpu_schedules/depthwise_conv.md
+def bench_depthwise_conv_mxnet(sizes, ctx='cpu'):
+    """Return the GFLOPS of MXNet convolution"""
+    return [d2ltvm.conv_gflop(1, c, n, k, (k-1)//2, 1) /
+            d2ltvm.bench_workload(depthwise_conv_timer_mxnet(c, n, k, ctx))
+            for c, n, k in sizes]
+
+
 # Defined in file: ./chapter_gpu_schedules/matmul.md
 def matmul_timer_mxnet(n, ctx):
     """The matrix multiplication timer for MXNet
