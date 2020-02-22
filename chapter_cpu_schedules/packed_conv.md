@@ -65,6 +65,8 @@ mod(tvm.nd.array(x), packed_x)
 np.testing.assert_equal(packed_x.asnumpy(), y)
 ```
 
+Of note, in :numref:`ch_conv` we defined the layout of the input data to be `NCHW`. For the packed data `PackedX` here, we follow the convention defined in :cite:`Liu.Wang.Yu.ea.2019` to define its layout as `NCHW[x]c`, where `x` describes the size of `c`, which is 2 (the value of `tc` above) in this case.
+
 ## Computation
 
 Since we changed the data layout, we need to re-implement the convolution computation accordingly.
