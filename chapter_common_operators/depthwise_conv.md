@@ -110,11 +110,11 @@ In the MobileNet paper :cite:`Howard.Zhu.Chen.ea.2017`, the depthwise convolutio
 
 In fact, MXNet uses the same API `mx.nd.Convolution` to process depthwise convolution by specifying the number of groups, as we will show in the next code block.
 
-In addition, a depthwise convolution can be generalized in other ways. For example, we can specify a `multiplier` to increase the number of channels for the output of depthwise convolution, which we are cover in this section for simplicity.
+In addition, a depthwise convolution can be generalized in other ways. For example, we can specify a `multiplier` to increase the number of channels for the output of depthwise convolution, which we are not cover for simplicity.
 
 ## Comparing to Baseline
 
-We use MXNet’s convolution operator as the ground truth to verify the correctness of our depthwise convolution. Before that, we will need to create data. As for TVM, we modify the `get_conv_data_mxnet` defined in :numref:`ch_conv` to take `conv_type`.
+We use MXNet’s convolution operator as the ground truth to verify the correctness of our depthwise convolution. Before that, we will need to generate data. Like what with have done for TVM, we modify the `get_conv_data_mxnet` method defined in :numref:`ch_conv` to take `conv_type`. The data used for depthwise convolution in MXNet can then be generated accordingly.
 
 ```{.python .input  n=10}
 import mxnet as mx
