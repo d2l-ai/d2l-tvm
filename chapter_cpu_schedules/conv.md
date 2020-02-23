@@ -14,7 +14,14 @@ import tvm
 target = 'llvm -mcpu=skylake-avx512'
 ```
 
-Let's first define our performance baseline, which is the convolution operator provided by MXNet. To simplify the measurement, we use the same number of input and output channels, and the same size of height and width of input and kernel tensors. The padding will be `(kernel - 1) // 2` and the stride will be 1 so that the output will have the same width and height as the input, i.e. `SAME` padding.
+Let's first define our performance baseline, which is the convolution operator provided by MXNet, backing up by Intel MKL-DNN library. MKL-DNN uses OpenMP compiled by Intel compiler to implement the thread-level parallelization. In order to match the thread behavior of TVM described in :numref:`ch_vector_add_cpu`, we specify the following Intel OpenMP environment variables. Without setting them, sometimes the multi-thread performance of MKL-DNN kernels may not be stable.
+
+```{.python .input}
+import os
+os.environ['KMP_AFFINITY']='granularity=fine,noduplicates,compact,1,0'
+```
+
+To simplify the measurement, we use the same number of input and output channels, and the same size of height and width of input and kernel tensors. The padding will be `(kernel - 1) // 2` and the stride will be 1 so that the output will have the same width and height as the input, i.e. `SAME` padding.
 
 ```{.python .input}
 # Save to the d2ltvm package.

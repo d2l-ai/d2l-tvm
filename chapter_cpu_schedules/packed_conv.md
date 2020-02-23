@@ -7,7 +7,9 @@ We observed in :numref:`ch_conv_cpu` that the performance degrades when increasi
 import d2ltvm
 import numpy as np
 import tvm
+import os
 
+os.environ['KMP_AFFINITY']='granularity=fine,noduplicates,compact,1,0'
 target = 'llvm -mcpu=skylake-avx512'
 ```
 
