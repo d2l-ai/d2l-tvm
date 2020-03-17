@@ -12,4 +12,5 @@ vector_add
 broadcast_add
 matmul
 conv
+depthwise_conv
 ```
