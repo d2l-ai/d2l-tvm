@@ -455,3 +455,31 @@ def matmul_timer_mxnet(n, ctx):
     return timer.timeit
 
 
+# Defined in file: ./chapter_gpu_schedules/conv.md
+def split_axis(factors, sch, op, axis):
+        """Splitting an axis into factors
+
+        Parameters
+        ----------
+        factors: array of integers
+            The factors that the split applies
+        sch: tvm.schedule.Schedule
+            The tvm schedule
+        op: tvm.tensor.Operation
+            The stage to be applied
+        axis: tvm.schedule.IterVar
+            axis to split
+
+        Returns
+        -------
+        axes : list of Axis
+            The transformed axes.
+        """
+        ret = []
+        for i in range(0, len(factors)):
+            ax0, ax1 = sch[op].split(axis, factor=int(np.prod(factors[i:])))
+            ret.append(ax0)
+            axis = ax1
+        return ret + [axis]
+
+

@@ -75,6 +75,7 @@ tile_rc = [1, 1]
 tile_rh = [1, 1]
 tile_rw = [1, 3]
 
+# Save to the d2ltvm package.
 def split_axis(factors, sch, op, axis):
         """Splitting an axis into factors
 
