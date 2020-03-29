@@ -65,7 +65,7 @@ If luckily you are using Ubuntu with `python-3.7`, `llvm-6.0` and `cuda-10.1` in
 may use the pre-built library that is for evaluating this book:
 
 ```bash
-pip install https://tvm-repo.s3-us-west-2.amazonaws.com/tvm-0.6.dev0-cp37-cp37m-linux_x86_64.whl
+pip install https://tvm-repo.s3-us-west-2.amazonaws.com/tvm-0.7.dev1-cp37-cp37m-linux_x86_64.whl
 ```
 
 
