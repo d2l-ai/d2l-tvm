@@ -14,6 +14,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 import timeit
 import tvm
+from tvm import te
 ```
 
 Here we choose the broadcast add depicted in :numref:`fig_bcast_add`. The other broadcast patterns do not make essential difference.
@@ -62,7 +63,7 @@ The good schedule (i.e. what works) follows the similar scheme defined in :numre
 target = 'llvm -mcpu=skylake-avx512'
 def default(n):
     A, B, C = d2ltvm.broadcast_add((n, 1), (n, n))
-    s = tvm.create_schedule(C.op)
+    s = te.create_schedule(C.op)
     return s, (A, B, C)
 
 def good_schedule(n):

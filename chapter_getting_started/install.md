@@ -99,6 +99,7 @@ libraries imported by `d2ltvm`.
 ```{.python .input  n=1}
 # Save to the d2ltvm package.
 import tvm
+from tvm import te
 import time
 import timeit
 import numpy as np

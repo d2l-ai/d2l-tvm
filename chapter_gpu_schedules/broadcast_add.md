@@ -8,6 +8,7 @@ This section talks about scheduling the broadcast add computation defined in :nu
 ```{.python .input  n=1}
 %matplotlib inline
 import tvm
+from tvm import te
 import numpy as np
 import d2ltvm
 import mxnet as mx
@@ -44,7 +45,7 @@ nt = 64  # number of threads in a block
 nb = 256 # number of blocks
 
 with tvm.target.create('cuda'):
-    assert nt <= tvm.target.current_target(allow_none=False).max_num_threads, \
+    assert nt <= tvm.target.Target.current(allow_none=False).max_num_threads, \
         'the number of threads in a block exceed the hardware limit'
 ```
 
@@ -55,18 +56,18 @@ def continuous_parallel(n):
     A, B, C = d2ltvm.broadcast_add((n,1), (n,n))
     total_size = n * n
     need_further_split = total_size > nb * nt
-    s = tvm.create_schedule(C.op)
+    s = te.create_schedule(C.op)
     x, y = C.op.axis
     fused = s[C].fuse(x, y)
     if need_further_split:
         bx, tx = s[C].split(fused, nparts=nb)
         tx, xi = s[C].split(tx, nparts=nt)
-        s[C].bind(bx, tvm.thread_axis("blockIdx.x"))
-        s[C].bind(tx, tvm.thread_axis("threadIdx.x"))
+        s[C].bind(bx, te.thread_axis("blockIdx.x"))
+        s[C].bind(tx, te.thread_axis("threadIdx.x"))
     else:
         bx, tx = s[C].split(fused, factor=nt)
-        s[C].bind(bx, tvm.thread_axis("blockIdx.x"))
-        s[C].bind(tx, tvm.thread_axis("threadIdx.x"))
+        s[C].bind(bx, te.thread_axis("blockIdx.x"))
+        s[C].bind(tx, te.thread_axis("threadIdx.x"))
     return s, (A, B, C)
 
 s, args = continuous_parallel(256)
@@ -96,7 +97,7 @@ def alternate_parallel(n):
     A, B, C = d2ltvm.broadcast_add((n,1), (n,n))
     total_size = n * n
     need_further_split = total_size > nb * nt
-    s = tvm.create_schedule(C.op)
+    s = te.create_schedule(C.op)
     x, y = C.op.axis
     fused = s[C].fuse(x, y)
     if need_further_split:
@@ -105,12 +106,12 @@ def alternate_parallel(n):
         # bring the outermost axis to the innermost 
         # for alternate data access of a CUDA thread
         s[C].reorder(bx, tx, xo)
-        s[C].bind(bx, tvm.thread_axis("blockIdx.x"))
-        s[C].bind(tx, tvm.thread_axis("threadIdx.x"))
+        s[C].bind(bx, te.thread_axis("blockIdx.x"))
+        s[C].bind(tx, te.thread_axis("threadIdx.x"))
     else:
         bx, tx = s[C].split(fused, factor=nt)
-        s[C].bind(bx, tvm.thread_axis("blockIdx.x"))
-        s[C].bind(tx, tvm.thread_axis("threadIdx.x"))
+        s[C].bind(bx, te.thread_axis("blockIdx.x"))
+        s[C].bind(tx, te.thread_axis("threadIdx.x"))
     return s, (A, B, C)
 
 s, args = alternate_parallel(256)

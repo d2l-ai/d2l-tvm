@@ -5,21 +5,22 @@ Every tensor has a data type, which is typically `float32` in deep learning, but
 
 ## Specifying a Data Type
 
-To use a data type different to the default `float32`, we can specify it explicitly when creating the placeholders. In the following code block, we generalize the vector addition expression defined in :numref:`ch_vector_add` to accept an argument `dtype` to specify the data type. In particular, we pass `dtype` to `tvm.placeholder` when creating `A` and `B`. The result `C` then obtains the same data type as `A` and `B`.
+To use a data type different to the default `float32`, we can specify it explicitly when creating the placeholders. In the following code block, we generalize the vector addition expression defined in :numref:`ch_vector_add` to accept an argument `dtype` to specify the data type. In particular, we pass `dtype` to `te.placeholder` when creating `A` and `B`. The result `C` then obtains the same data type as `A` and `B`.
 
 ```{.python .input}
 import tvm
+from tvm import te
 import d2ltvm
 import numpy as np
 
 n = 100
 
 def tvm_vector_add(dtype):
-    A = tvm.placeholder((n,), dtype=dtype)
-    B = tvm.placeholder((n,), dtype=dtype)
-    C = tvm.compute(A.shape, lambda i: A[i] + B[i])
+    A = te.placeholder((n,), dtype=dtype)
+    B = te.placeholder((n,), dtype=dtype)
+    C = te.compute(A.shape, lambda i: A[i] + B[i])
     print('expression dtype:', A.dtype, B.dtype, C.dtype)
-    s = tvm.create_schedule(C.op)
+    s = te.create_schedule(C.op)
     return tvm.build(s, [A, B, C])
 ```
 
@@ -52,16 +53,16 @@ for dtype in ['float16', 'float64', 'int8','int16', 'int64']:
 ## Converting Elements Data Types
 
 Besides constructing a tensor with a particular data type, we can also cast the data type of a tensor element during the computation. The following method is the same as `tvm_vector_add` 
-except that it casts the data type of A and B in `tvm.compute`, leaving the data type defined in `tvm.placeholder` as default (`float32`). Because of the casting done by `astype`, the result `C` will have the data type specified by `dtype`.
+except that it casts the data type of A and B in `te.compute`, leaving the data type defined in `te.placeholder` as default (`float32`). Because of the casting done by `astype`, the result `C` will have the data type specified by `dtype`.
 
 ```{.python .input}
 def tvm_vector_add_2(dtype):
-    A = tvm.placeholder((n,))
-    B = tvm.placeholder((n,))
-    C = tvm.compute(A.shape, 
+    A = te.placeholder((n,))
+    B = te.placeholder((n,))
+    C = te.compute(A.shape, 
                     lambda i: A[i].astype(dtype) + B[i].astype(dtype))
     print('expression dtype:', A.dtype, B.dtype, C.dtype)
-    s = tvm.create_schedule(C.op)
+    s = te.create_schedule(C.op)
     return tvm.build(s, [A, B, C])
 ```
 

@@ -7,6 +7,7 @@ Depthwise convolution is a special kind of convolution commonly used in convolut
 import d2ltvm
 import numpy as np
 import tvm
+from tvm import te
 ```
 
 ## Compute definition
@@ -67,18 +68,18 @@ def depthwise_conv(ic, nh, nw, kh, kw, ph=0, pw=0, sh=1, sw=1):
     sh, sw : height and width strides, default 1
     """
     # reduction axes
-    rkh = tvm.reduce_axis((0, kh), name='rkh')
-    rkw = tvm.reduce_axis((0, kw), name='rkw')
+    rkh = te.reduce_axis((0, kh), name='rkh')
+    rkw = te.reduce_axis((0, kw), name='rkw')
     # output height and weights
     oh = conv_out_size(nh, kh, ph, sh)
     ow = conv_out_size(nw, kw, pw, sw)
     # pad X and then compute Y
-    X = tvm.placeholder((ic, nh, nw), name='X')
-    K = tvm.placeholder((ic, 1, kh, kw), name='K')
+    X = te.placeholder((ic, nh, nw), name='X')
+    K = te.placeholder((ic, 1, kh, kw), name='K')
     PaddedX = padding(X, ph, pw) if ph * pw != 0 else X
-    Y = tvm.compute(
+    Y = te.compute(
         (ic, oh, ow),
-        lambda c, i, j: tvm.sum(
+        lambda c, i, j: te.sum(
             (PaddedX[c, i*sh+rkh, j*sw+rkw] * K[c, 0, rkh, rkw]),
             axis=[rkh, rkw]), name='Y')
     
@@ -92,7 +93,7 @@ We also print out the pseudo-code of it.
 ic, n, k, p, s = 256, 12, 3, 1, 1
 
 X, K, Y, _ = depthwise_conv(ic, n, n, k, k, p, p, s, s)
-sch = tvm.create_schedule(Y.op)
+sch = te.create_schedule(Y.op)
 mod = tvm.build(sch, [X, K, Y])
 print(tvm.lower(sch, [X, K, Y], simple_mode=True))
 
@@ -149,3 +150,7 @@ np.testing.assert_allclose(out_mx[0].asnumpy(), out.asnumpy(), atol=1e-5)
 
 - Depthwise convolution, together with pointwise convolution, can save a lot of computation and memory compared to normal 2-D convolution.
 - Depthwise convolution takes kernels in 3-D, while normal 2-D convolution takes kernels in 4-D.
+
+```{.python .input}
+
+```

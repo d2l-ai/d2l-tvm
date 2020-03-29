@@ -7,6 +7,7 @@ import d2ltvm
 import numpy as np
 import timeit
 import tvm
+from tvm import te
 ```
 
 ## Setup
@@ -106,7 +107,7 @@ def bind_thread(stage, axes, tags):
     """Bind a list of axes to thread axes
     """
     for axis, tag in zip(axes, tags):
-        stage.bind(axis, tvm.thread_axis(tag))
+        stage.bind(axis, te.thread_axis(tag))
 ```
 
 Next we specify the hyperparameters with values we described before.
@@ -125,7 +126,7 @@ Now we can implement our schedule. There are three things worth mentioning:
 ```{.python .input  n=69}
 def matmul_gpu(n):
     A, B, C = d2ltvm.matmul(n, n, n)
-    s = tvm.create_schedule(C.op)
+    s = te.create_schedule(C.op)
     # Create caches
     A_shared = s.cache_read(A, "shared", [C])
     A_local  = s.cache_read(A_shared, "local", [C])

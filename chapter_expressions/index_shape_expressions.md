@@ -1,11 +1,12 @@
 # Index and Shape Expressions
 
-You already know that a shape can be a tuple of symbols such as `(n, m)` and the elements can be accessed via indexing, e.g. `a[i, j]`. In practice, both shapes and indices may be computed through complex expressions. We will go through several examples in this section. 
+You already know that a shape can be a tuple of symbols such as `(n, m)` and the elements can be accessed via indexing, e.g. `a[i, j]`. In practice, both shapes and indices may be computed through complex expressions. We will go through several examples in this section.
 
 ```{.python .input}
 import d2ltvm
 import numpy as np
 import tvm
+from tvm import te
 ```
 
 ## Matrix Transpose
@@ -13,17 +14,17 @@ import tvm
 Our first example is matrix transpose `a.T`, in which we access `a`'s elements by columns.
 
 ```{.python .input  n=16}
-n = tvm.var('n')
-m = tvm.var('m')
-A = tvm.placeholder((n, m), name='a')
-B = tvm.compute((m, n), lambda i, j: A[j, i], 'b')
-s = tvm.create_schedule(B.op)
+n = te.var('n')
+m = te.var('m')
+A = te.placeholder((n, m), name='a')
+B = te.compute((m, n), lambda i, j: A[j, i], 'b')
+s = te.create_schedule(B.op)
 tvm.lower(s, [A, B], simple_mode=True)
 ```
 
 Note that the 2-D index, e.g. `b[i,j]` are collapsed to the 1-D index `b[((i*n) + j)]` to follow the C convention.
 
-Now verify the results. 
+Now verify the results.
 
 ```{.python .input  n=21}
 a = np.arange(12, dtype='float32').reshape((3, 4))
@@ -41,8 +42,8 @@ print(b)
 Next let's use expressions for indexing. The following code block reshapes a 2-D array `a` (`n` by `m` as defined above) to 1-D (just like `a.reshape(-1)` in NumPy). Note how we convert the 1-D index `i` to the 2-D index `[i//m, i%m]`.
 
 ```{.python .input  n=28}
-B = tvm.compute((m*n, ), lambda i: A[i//m, i%m], name='b')
-s = tvm.create_schedule(B.op)
+B = te.compute((m*n, ), lambda i: A[i//m, i%m], name='b')
+s = te.create_schedule(B.op)
 tvm.lower(s, [A, B], simple_mode=True)
 ```
 
@@ -51,9 +52,9 @@ Since an $n$-D array is essentially listed in the memory as a 1-D array, the gen
 We can implement a general 2-D reshape function as well.
 
 ```{.python .input  n=31}
-p, q = tvm.var('p'), tvm.var('q')
-B = tvm.compute((p, q), lambda i, j: A[(i*q+j)//m, (i*q+j)%m], name='b')
-s = tvm.create_schedule(B.op)
+p, q = te.var('p'), te.var('q')
+B = te.compute((p, q), lambda i, j: A[(i*q+j)//m, (i*q+j)%m], name='b')
+s = te.create_schedule(B.op)
 tvm.lower(s, [A, B], simple_mode=True)
 ```
 
@@ -74,9 +75,9 @@ print(b)
 Now let's consider a special slicing operator `a[bi::si, bj::sj] ` where `bi`, `bj`, `si` and `sj` can be specified later. Now the output shape needs to be computed based on the arguments. In addition, we need to pass the variables `bi`, `bj`, `si` and `sj` as arguments when compiling the module.
 
 ```{.python .input}
-bi, bj, si, sj = [tvm.var(name) for name in ['bi', 'bj', 'si', 'sj']]
-B = tvm.compute(((n-bi)//si, (m-bj)//sj), lambda i, j: A[i*si+bi, j*sj+bj], name='b')
-s = tvm.create_schedule(B.op)
+bi, bj, si, sj = [te.var(name) for name in ['bi', 'bj', 'si', 'sj']]
+B = te.compute(((n-bi)//si, (m-bj)//sj), lambda i, j: A[i*si+bi, j*sj+bj], name='b')
+s = te.create_schedule(B.op)
 mod = tvm.build(s, [A, B, bi, si, bj, sj])
 ```
 

@@ -10,6 +10,7 @@ import d2ltvm
 import numpy as np
 import timeit
 import tvm
+from tvm import te
 
 target = 'llvm -mcpu=skylake-avx512'
 ```
@@ -113,7 +114,7 @@ th, tw = 8, 8  # Tile sizes for height and weight
 
 def cached_block(oc, ic, n, k, p, s):
     X, K, Y, PaddedX = d2ltvm.conv(oc, ic, n, n, k, k, p, p, s, s)
-    s = tvm.create_schedule(Y.op)
+    s = te.create_schedule(Y.op)
     CachedY = s.cache_write(Y, 'local')
     # Compute the output block for every output channel in parallel
     oc, h, w = Y.op.axis

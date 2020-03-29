@@ -54,19 +54,20 @@ Now let's implement `vector_add` in TVM. The TVM implementation differs from abo
 1. We don't need to write the complete function, but only to specify how each element of the output, i.e. `c[i]`, is computed
 1. TVM is symbolic, we create symbolic variables by specifying their shapes, and define how the program will be computed
 
-In the following program, we first declare the placeholders `A` and `B` for both inputs by specifying their shapes, `(n,)`, through `tvm.placeholder`. Both `A` and `B` are `Tensor` objects, which we can feed data later. We assign names to them so we can print an easy-to-read program later.
+In the following program, we first declare the placeholders `A` and `B` for both inputs by specifying their shapes, `(n,)`, through `tvm.te.placeholder`. Both `A` and `B` are `Tensor` objects, which we can feed data later. We assign names to them so we can print an easy-to-read program later.
 
 Next we define how the output `C` is computed by `tvm.compute`. It accepts two arguments, the output shape, and a function to compute each element by giving its index. Since the output is a vector, its elements are indexed by integers. The lambda function defined in `tvm.compute` accepts a single argument `i`, and returns `c[i]`, which is identical to `c[i] = a[i] + b[i]` defined in `vector_add`. One difference is that we don't write the for-loop, which will be filled by TVM later.
 
 ```{.python .input  n=26}
 import tvm
+from tvm import te # te stands for tensor expression
 
 # Save to the d2ltvm package.
 def vector_add(n):
     """TVM expression for vector add"""
-    A = tvm.placeholder((n,), name='a')
-    B = tvm.placeholder((n,), name='b')
-    C = tvm.compute(A.shape, lambda i: A[i] + B[i], name='c')
+    A = te.placeholder((n,), name='a')
+    B = te.placeholder((n,), name='b')
+    C = te.compute(A.shape, lambda i: A[i] + B[i], name='c')
     return A, B, C
 
 A, B, C = vector_add(n)
@@ -98,7 +99,7 @@ To run the computation, we need to specify how to execute the program, for examp
 Such an execution plan is called a *schedule*. Since `C` is the output tensor, let's create a default schedule on its operator and print the pseudo codes.
 
 ```{.python .input  n=48}
-s = tvm.create_schedule(C.op)
+s = te.create_schedule(C.op)
 ```
 
 A schedule consists of several stages. Each stage corresponds to an operation to describe how it is scheduled. We can access a particular stage by either `s[C]` or `s[C.op]`.
@@ -198,7 +199,7 @@ mod.export_library(mod_fname)
 and then loaded back later.
 
 ```{.python .input  n=15}
-loaded_mod = tvm.module.load(mod_fname)
+loaded_mod = tvm.runtime.load_module(mod_fname)
 ```
 
 Verify the results.

@@ -11,6 +11,7 @@ In this section we will demonstrate how to perform a broadcast add between two 2
 ```{.python .input  n=1}
 import numpy as np
 import tvm
+from tvm import te
 
 # Save to the d2ltvm package.
 def broadcast_add(shape1, shape2):
@@ -23,13 +24,13 @@ def broadcast_add(shape1, shape2):
     for i in range(len(shape1)):
         assert shape1[i] == shape2[i] or shape1[i] == 1 or shape2[i] == 1, \
             "tensor shapes do not fit for broadcasting"
-    A = tvm.placeholder(shape1, name='A')
-    B = tvm.placeholder(shape2, name='B')
+    A = te.placeholder(shape1, name='A')
+    B = te.placeholder(shape2, name='B')
     m = shape1[0] if shape2[0] == 1 else shape2[0]
     n = shape1[1] if shape2[1] == 1 else shape2[1]
     f = lambda x, y: A[0 if shape1[0]==1 else x, 0 if shape1[1]==1 else y] + \
         B[0 if shape2[0]==1 else x, 0 if shape2[1]==1 else y]
-    C = tvm.compute((m, n), f, name='C')
+    C = te.compute((m, n), f, name='C')
     return A, B, C
 ```
 
@@ -41,7 +42,7 @@ n = 4
 shape1 = (m, 1)
 shape2 = (m, n)
 A, B, C = broadcast_add(shape1, shape2)
-s = tvm.create_schedule(C.op)
+s = te.create_schedule(C.op)
 print(tvm.lower(s, [A, B], simple_mode=True))
 mod = tvm.build(s, [A, B, C])
 ```
@@ -77,7 +78,7 @@ Note that broadcast is allowed to perform along multiple dimensions.
 shape1 = (m, 1)
 shape2 = (1, n)
 A, B, C = broadcast_add(shape1, shape2)
-s = tvm.create_schedule(C.op)
+s = te.create_schedule(C.op)
 mod = tvm.build(s, [A, B, C])
 a, b, c = get_bcast_data(shape1, shape2, tvm.nd.array)
 mod(a, b, c)

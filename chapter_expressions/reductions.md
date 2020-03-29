@@ -6,6 +6,7 @@ Reduction is an operation to reduce certain dimension(s) of an input tensor, usu
 import d2ltvm
 import numpy as np
 import tvm
+from tvm import te
 ```
 
 ## Sum
@@ -37,11 +38,11 @@ It's fairly straightforward, we first iterate on the first dimension, `axis=0`, 
 Now let's implement the same thing in TVM. Comparing to the vector addition in :numref:`ch_vector_add`, we used two new operators here. One is `tvm.reduce_axis`, which create an axis for reduction with range from 0 to `m`. It's functionally similar to the `:` used in `sum_rows`, but we need to explicitly specify the range in TVM. The other one is `tvm.sum`, which sums all elements along the reducing axis `k` and returns a scalar.
 
 ```{.python .input  n=30}
-n, m = tvm.var('n'), tvm.var('m')
-A = tvm.placeholder((n, m), name='a')
-j = tvm.reduce_axis((0, m), name='j')
-B = tvm.compute((n,), lambda i: tvm.sum(A[i, j], axis=j), name='b')
-s = tvm.create_schedule(B.op)
+n, m = te.var('n'), te.var('m')
+A = te.placeholder((n, m), name='a')
+j = te.reduce_axis((0, m), name='j')
+B = te.compute((n,), lambda i: te.sum(A[i, j], axis=j), name='b')
+s = te.create_schedule(B.op)
 tvm.lower(s, [A, B], simple_mode=True)
 ```
 
@@ -59,9 +60,9 @@ np.testing.assert_equal(b, c.asnumpy())
 We know that `a.sum()` will sum all elements in `a` and returns a scalar. Let's also implement this in TVM. To do it, we need another reduction axis along the first dimension, whose size is `n`. The result is a scalar, namely a 0-rank tensor, can be created with an empty tuple `()`.
 
 ```{.python .input  n=31}
-i = tvm.reduce_axis((0, n), name='i')
-B = tvm.compute((), lambda: tvm.sum(A[i, j], axis=(i, j)), name='b')
-s = tvm.create_schedule(B.op)
+i = te.reduce_axis((0, n), name='i')
+B = te.compute((), lambda: te.sum(A[i, j], axis=(i, j)), name='b')
+s = te.create_schedule(B.op)
 tvm.lower(s, [A, B], simple_mode=True)
 ```
 
@@ -95,23 +96,23 @@ def prod_rows(a, b):
             b[i] = b[i] * a[i, j]
 ```
 
-As can be seen, we need to first initialize the return values to be 1, and then compute the reduction using scalar product `*`. Now let's define these two functions in TVM to serve as the arguments of `tvm.comm_reducer`. As discussed, the first one defines $a\circ b$ with two scalar inputs. The second one accepts a data type argument to return the initial value of an element. Then we can create the reduction operator.
+As can be seen, we need to first initialize the return values to be 1, and then compute the reduction using scalar product `*`. Now let's define these two functions in TVM to serve as the arguments of `te.comm_reducer`. As discussed, the first one defines $a\circ b$ with two scalar inputs. The second one accepts a data type argument to return the initial value of an element. Then we can create the reduction operator.
 
 ```{.python .input}
 comp = lambda a, b: a * b
-init = lambda dtype: tvm.const(1, dtype=dtype)
-product = tvm.comm_reducer(comp, init)
+init = lambda dtype: tvm.tir.const(1, dtype=dtype)
+product = te.comm_reducer(comp, init)
 ```
 
-The usage of `product` is similar to `tvm.sum`. Actually, `tvm.sum` is a pre-defined reduction operator using the same way.
+The usage of `product` is similar to `te.sum`. Actually, `te.sum` is a pre-defined reduction operator using the same way.
 
 ```{.python .input  n=26}
-n = tvm.var('n')
-m = tvm.var('m')
-A = tvm.placeholder((n, m), name='a')
-k = tvm.reduce_axis((0, m), name='k')
-B = tvm.compute((n,), lambda i: product(A[i, k], axis=k), name='b')
-s = tvm.create_schedule(B.op)
+n = te.var('n')
+m = te.var('m')
+A = te.placeholder((n, m), name='a')
+k = te.reduce_axis((0, m), name='k')
+B = te.compute((n,), lambda i: product(A[i, k], axis=k), name='b')
+s = te.create_schedule(B.op)
 tvm.lower(s, [A, B], simple_mode=True)
 ```
 
@@ -128,5 +129,5 @@ np.testing.assert_allclose(a.prod(axis=1), b.asnumpy(), atol=1e-5)
 
 ## Summary
 
-- We can apply a reduction operator, e.g. `tvm.sum` over a reduction axis `tvm.reduce_axis`.
-- We can implement customized commutative reduction operators by `tvm.comm_reducer`.
+- We can apply a reduction operator, e.g. `te.sum` over a reduction axis `te.reduce_axis`.
+- We can implement customized commutative reduction operators by `te.comm_reducer`.
