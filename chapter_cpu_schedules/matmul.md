@@ -11,6 +11,7 @@ import d2ltvm
 import numpy as np
 import timeit
 import tvm
+from tvm import te
 
 target = 'llvm -mcpu=skylake-avx512'
 ```
@@ -38,7 +39,7 @@ The default schedule consists of three nested for-loops.
 ```{.python .input  n=3}
 def default(n):
     A, B, C = d2ltvm.matmul(n, n, n)
-    return tvm.create_schedule(C.op), (A, B, C)
+    return te.create_schedule(C.op), (A, B, C)
 
 s, args = default(64)
 print(tvm.lower(s, args, simple_mode=True))

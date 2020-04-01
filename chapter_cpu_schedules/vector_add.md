@@ -14,6 +14,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 import timeit
 import tvm
+from tvm import te
 ```
 
 We first define reusable plot functions to draw multiple lines, which generalize the plot function defined in :numref:`ch_call_overhead`.
@@ -88,7 +89,7 @@ The default schedule is a plain one-level for-loop program.
 ```{.python .input  n=12}
 def default(n):
     A, B, C = d2ltvm.vector_add(n)
-    s = tvm.create_schedule(C.op)
+    s = te.create_schedule(C.op)
     return s, (A, B, C)
 
 s, args = default(64)

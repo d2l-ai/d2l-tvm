@@ -5,24 +5,25 @@ The vector addition module defined in :numref:`ch_vector_add` only accepts vecto
 
 ## Variable Shapes
 
-Remember that we create symbolic placeholders for tensors `A` and `B` so we can feed with data later. We can do the same thing for the shape as well. In particular, the following code block uses `tvm.var` to create a symbolic variable for an `int32` scalar, whose value can be specified later.
+Remember that we create symbolic placeholders for tensors `A` and `B` so we can feed with data later. We can do the same thing for the shape as well. In particular, the following code block uses `te.var` to create a symbolic variable for an `int32` scalar, whose value can be specified later.
 
 ```{.python .input  n=1}
 import d2ltvm
 import numpy as np
 import tvm
+from tvm import te
 
-n = tvm.var(name='n')
+n = te.var(name='n')
 type(n), n.dtype
 ```
 
 Now we can use `(n,)` to create a placeholder for an arbitrary length vector.
 
 ```{.python .input  n=3}
-A = tvm.placeholder((n,), name='a')
-B = tvm.placeholder((n,), name='b')
-C = tvm.compute(A.shape, lambda i: A[i] + B[i], name='c')
-s = tvm.create_schedule(C.op)
+A = te.placeholder((n,), name='a')
+B = te.placeholder((n,), name='b')
+C = te.compute(A.shape, lambda i: A[i] + B[i], name='c')
+s = te.create_schedule(C.op)
 tvm.lower(s, [A, B, C], simple_mode=True)
 ```
 
@@ -52,10 +53,10 @@ The following method builds a module for multi-dimensional tensor addition, the 
 
 ```{.python .input  n=5}
 def tvm_vector_add(ndim):
-    A = tvm.placeholder([tvm.var() for _ in range(ndim)])
-    B = tvm.placeholder(A.shape)
-    C = tvm.compute(A.shape, lambda *i: A[i] + B[i])
-    s = tvm.create_schedule(C.op)
+    A = te.placeholder([te.var() for _ in range(ndim)])
+    B = te.placeholder(A.shape)
+    C = te.compute(A.shape, lambda *i: A[i] + B[i])
+    s = te.create_schedule(C.op)
     return tvm.build(s, [A, B, C])
 ```
 
@@ -71,5 +72,5 @@ test_mod(mod, (2, 3, 4, 5))
 
 ## Summary
 
-- We can use `tvm.var()` to specify the dimension(s) of a shape when we don't know the concrete data shape before execution.
+- We can use `te.var()` to specify the dimension(s) of a shape when we don't know the concrete data shape before execution.
 - The shape of an $n$-dimensional tensor is presented as an $n$-length tuple.

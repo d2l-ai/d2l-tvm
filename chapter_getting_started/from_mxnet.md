@@ -128,7 +128,7 @@ Now we load the saved module back.
 
 ```{.python .input  n=12}
 loaded_graph = open(graph_fn).read()
-loaded_mod = tvm.module.load(mod_fn)
+loaded_mod = tvm.runtime.load_module(mod_fn)
 loaded_params = open(params_fn, "rb").read()
 ```
 
@@ -148,3 +148,7 @@ tvm.testing.assert_allclose(loaded_scores, scores)
 - We can save the compiled module into disk to facilitate future deployment.
 
 ## [Discussions](https://discuss.tvm.ai/t/getting-started-neural-network-inference/4708)
+
+```{.python .input}
+
+```

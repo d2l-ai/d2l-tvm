@@ -17,6 +17,7 @@ The following method returns the computing expression of matrix multiplication.
 import d2ltvm
 import numpy as np
 import tvm
+from tvm import te
 
 # Save to the d2ltvm package
 def matmul(n, m, l):
@@ -25,11 +26,11 @@ def matmul(n, m, l):
     B : l x m matrix
     C : n x m matrix with C = A B
     """
-    k = tvm.reduce_axis((0, l), name='k')
-    A = tvm.placeholder((n, l), name='A')
-    B = tvm.placeholder((l, m), name='B')
-    C = tvm.compute((n, m),
-                    lambda x, y: tvm.sum(A[x, k] * B[k, y], axis=k),
+    k = te.reduce_axis((0, l), name='k')
+    A = te.placeholder((n, l), name='A')
+    B = te.placeholder((l, m), name='B')
+    C = te.compute((n, m),
+                    lambda x, y: te.sum(A[x, k] * B[k, y], axis=k),
                     name='C')
     return A, B, C
 ```
@@ -39,7 +40,7 @@ Let's compile a module for a square matrix multiplication.
 ```{.python .input  n=2}
 n = 100
 A, B, C = matmul(n, n, n)
-s = tvm.create_schedule(C.op)
+s = te.create_schedule(C.op)
 print(tvm.lower(s, [A, B], simple_mode=True))
 mod = tvm.build(s, [A, B, C])
 ```

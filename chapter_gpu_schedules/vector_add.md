@@ -6,6 +6,7 @@ In this section, we will optimize the vector add defined in :numref:`ch_vector_a
 ```{.python .input  n=1}
 %matplotlib inline
 import tvm
+from tvm import te
 import numpy as np
 import d2ltvm
 import mxnet as mx
@@ -54,10 +55,10 @@ nt = 64  # number of threads in a block
 
 def parallel(n):
     A, B, C = d2ltvm.vector_add(n)
-    s = tvm.create_schedule(C.op)
+    s = te.create_schedule(C.op)
     bx, tx = s[C].split(C.op.axis[0], factor=nt)
-    s[C].bind(bx, tvm.thread_axis("blockIdx.x"))
-    s[C].bind(tx, tvm.thread_axis("threadIdx.x"))
+    s[C].bind(bx, te.thread_axis("blockIdx.x"))
+    s[C].bind(tx, te.thread_axis("threadIdx.x"))
     return s, (A, B, C)
 
 s, args = parallel(256)

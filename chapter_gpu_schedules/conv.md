@@ -8,6 +8,7 @@ import d2ltvm
 import numpy as np
 import timeit
 import tvm
+from tvm import te
 
 target = 'cuda'
 ```
@@ -40,11 +41,11 @@ We then describe the computation of convolution in TVM using `conv` method, whic
 ```{.python .input  n=4}
 def default_sch(oc, ic, n, k, p, s):
     X, K, Y, PaddedX = d2ltvm.conv(oc, ic, n, n, k, k, p, p, s, s)
-    sch = tvm.create_schedule(Y.op)
+    sch = te.create_schedule(Y.op)
     sch[PaddedX].compute_inline()
     _, y, x = sch[Y].op.axis
-    sch[Y].bind(y, tvm.thread_axis("blockIdx.x"))
-    sch[Y].bind(x, tvm.thread_axis("threadIdx.x"))
+    sch[Y].bind(y, te.thread_axis("blockIdx.x"))
+    sch[Y].bind(x, te.thread_axis("threadIdx.x"))
     print(tvm.lower(sch, [X, K, Y], simple_mode=True))
     return sch, (X, K, Y)
 
@@ -83,11 +84,11 @@ def split_axis(factors, sch, op, axis):
         ----------
         factors: array of integers
             The factors that the split applies
-        sch: tvm.schedule.Schedule
+        sch: tvm.te.schedule.Schedule
             The tvm schedule
-        op: tvm.tensor.Operation
+        op: tvm.te.tensor.Operation
             The stage to be applied
-        axis: tvm.schedule.IterVar
+        axis: tvm.te.schedule.IterVar
             axis to split
 
         Returns
@@ -104,7 +105,7 @@ def split_axis(factors, sch, op, axis):
 
 def tiling(oc, ic, n, k, p, s):
     X, K, Y, PaddedX = d2ltvm.conv(oc, ic, n, n, k, k, p, p, s, s)
-    sch = tvm.create_schedule(Y.op)
+    sch = te.create_schedule(Y.op)
     sch[PaddedX].compute_inline()
     
     YL = sch.cache_write(Y, 'local')
@@ -121,12 +122,12 @@ def tiling(oc, ic, n, k, p, s):
     bh, th, ih = split_axis(tile_h, sch, Y, h)
     bw, tw, iw = split_axis(tile_w, sch, Y, w)
     
-    sch[Y].bind(bc, tvm.thread_axis("blockIdx.z"))
-    sch[Y].bind(bh, tvm.thread_axis("blockIdx.y"))
-    sch[Y].bind(bw, tvm.thread_axis("blockIdx.x"))
-    sch[Y].bind(tc, tvm.thread_axis("threadIdx.z"))
-    sch[Y].bind(th, tvm.thread_axis("threadIdx.y"))
-    sch[Y].bind(tw, tvm.thread_axis("threadIdx.x"))
+    sch[Y].bind(bc, te.thread_axis("blockIdx.z"))
+    sch[Y].bind(bh, te.thread_axis("blockIdx.y"))
+    sch[Y].bind(bw, te.thread_axis("blockIdx.x"))
+    sch[Y].bind(tc, te.thread_axis("threadIdx.z"))
+    sch[Y].bind(th, te.thread_axis("threadIdx.y"))
+    sch[Y].bind(tw, te.thread_axis("threadIdx.x"))
     sch[Y].reorder(bc, bh, bw, tc, th, tw, ic, ih, iw)
     
     sch[YL].compute_at(sch[Y], tw)
@@ -152,9 +153,9 @@ def tiling(oc, ic, n, k, p, s):
         tz, fused = sch[load].split(fused, nparts=tile_c[0])
         ty, fused = sch[load].split(fused, nparts=tile_h[0])
         tx, _ = sch[load].split(fused, nparts=tile_w[0])
-        sch[load].bind(tz, tvm.thread_axis("threadIdx.z"))
-        sch[load].bind(ty, tvm.thread_axis("threadIdx.y"))
-        sch[load].bind(tx, tvm.thread_axis("threadIdx.x"))
+        sch[load].bind(tz, te.thread_axis("threadIdx.z"))
+        sch[load].bind(ty, te.thread_axis("threadIdx.y"))
+        sch[load].bind(tx, te.thread_axis("threadIdx.x"))
     
     return sch, (X, K, Y)
 
@@ -206,7 +207,7 @@ tile_rw = [1, 1]
 
 def vthread(oc, ic, n, k, p, s):
     X, K, Y, PaddedX = d2ltvm.conv(oc, ic, n, n, k, k, p, p, s, s)
-    sch = tvm.create_schedule(Y.op)
+    sch = te.create_schedule(Y.op)
     sch[PaddedX].compute_inline()
     
     YL = sch.cache_write(Y, 'local')
@@ -223,15 +224,15 @@ def vthread(oc, ic, n, k, p, s):
     bh, vh, th, ih = split_axis(tile_h, sch, Y, h)
     bw, vw, tw, iw = split_axis(tile_w, sch, Y, w)
     
-    sch[Y].bind(bc, tvm.thread_axis("blockIdx.z"))
-    sch[Y].bind(bh, tvm.thread_axis("blockIdx.y"))
-    sch[Y].bind(bw, tvm.thread_axis("blockIdx.x"))
-    sch[Y].bind(vc, tvm.thread_axis("vthread"))
-    sch[Y].bind(vh, tvm.thread_axis("vthread"))
-    sch[Y].bind(vw, tvm.thread_axis("vthread"))
-    sch[Y].bind(tc, tvm.thread_axis("threadIdx.z"))
-    sch[Y].bind(th, tvm.thread_axis("threadIdx.y"))
-    sch[Y].bind(tw, tvm.thread_axis("threadIdx.x"))
+    sch[Y].bind(bc, te.thread_axis("blockIdx.z"))
+    sch[Y].bind(bh, te.thread_axis("blockIdx.y"))
+    sch[Y].bind(bw, te.thread_axis("blockIdx.x"))
+    sch[Y].bind(vc, te.thread_axis("vthread"))
+    sch[Y].bind(vh, te.thread_axis("vthread"))
+    sch[Y].bind(vw, te.thread_axis("vthread"))
+    sch[Y].bind(tc, te.thread_axis("threadIdx.z"))
+    sch[Y].bind(th, te.thread_axis("threadIdx.y"))
+    sch[Y].bind(tw, te.thread_axis("threadIdx.x"))
     sch[Y].reorder(bc, bh, bw, vc, vh, vw, tc, th, tw, ic, ih, iw)
     
     sch[YL].compute_at(sch[Y], tw)
@@ -257,9 +258,9 @@ def vthread(oc, ic, n, k, p, s):
         tz, fused = sch[load].split(fused, nparts=tile_c[1])
         ty, fused = sch[load].split(fused, nparts=tile_h[1])
         tx, _ = sch[load].split(fused, nparts=tile_w[1])
-        sch[load].bind(tz, tvm.thread_axis("threadIdx.z"))
-        sch[load].bind(ty, tvm.thread_axis("threadIdx.y"))
-        sch[load].bind(tx, tvm.thread_axis("threadIdx.x"))
+        sch[load].bind(tz, te.thread_axis("threadIdx.z"))
+        sch[load].bind(ty, te.thread_axis("threadIdx.y"))
+        sch[load].bind(tx, te.thread_axis("threadIdx.x"))
     
     return sch, (X, K, Y)
 

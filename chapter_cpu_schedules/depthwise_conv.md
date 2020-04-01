@@ -7,6 +7,7 @@ In this section, we will follow the packing idea presented in :numref:`ch_packed
 import d2ltvm
 import numpy as np
 import tvm
+from tvm import te
 import timeit
 import os
 os.environ['KMP_AFFINITY']='granularity=fine,noduplicates,compact,1,0'
@@ -32,19 +33,19 @@ def depthwise_conv_pack(c, nh, nw, kh, kw, ph, pw, tc):
     ph, pw : height and width padding
     tc : the tiling size of channels
     """
-    X = tvm.placeholder((c, nh, nw), name='X')
-    K = tvm.placeholder((c, 1, kh, kw), name='K')
+    X = te.placeholder((c, nh, nw), name='X')
+    K = te.placeholder((c, 1, kh, kw), name='K')
     PaddedX = d2ltvm.padding(X, ph, pw) if ph * pw != 0 else X
     # make sure the channel tiling is valid
     if c < tc:
         tc = c
     assert c % tc == 0
     # pack X and K
-    PackedX = tvm.compute(
+    PackedX = te.compute(
         (c//tc, nh+ph*2, nw+pw*2, tc),
         lambda c_out, x, y, c_in: PaddedX[c_out*tc + c_in, x, y],
         name='PackedX')
-    PackedK = tvm.compute(
+    PackedK = te.compute(
         (c//tc, 1, kh, kw, 1, tc),
         lambda c_out, _, x, y, __, c_in: K[
             c_out*tc + c_in, 0, x, y],
@@ -70,21 +71,21 @@ def depthwise_conv(c, nh, nw, kh, kw, ph, pw, sh, sw, tc):
     X, K, PaddedX, PackedX, PackedK = depthwise_conv_pack(
         c, nh, nw, kh, kw, ph, pw, tc)
     # reduction axes
-    rkh = tvm.reduce_axis((0, kh), name='rkh')
-    rkw = tvm.reduce_axis((0, kw), name='rkw')
+    rkh = te.reduce_axis((0, kh), name='rkh')
+    rkw = te.reduce_axis((0, kw), name='rkw')
     # output height and weights
     oh = d2ltvm.conv_out_size(nh, kh, ph, sh)
     ow = d2ltvm.conv_out_size(nw, kw, pw, sw)
     # compute Y in the packed layout
-    PackedY = tvm.compute(
+    PackedY = te.compute(
         (c//tc, oh, ow, tc),
-        lambda c_out, x, y, c_in: tvm.sum(
+        lambda c_out, x, y, c_in: te.sum(
             (PackedX[c_out, x*sh+rkh, y*sw+rkw, c_in] *
              PackedK[c_out, 0, rkh, rkw, 0, c_in]),
             axis=[rkh, rkw]), name='PackedY')
     
     # Unpack the result
-    Y = tvm.compute((c, oh, ow),
+    Y = te.compute((c, oh, ow),
                     lambda c, x, y: PackedY[c//tc, x, y, c%tc],
                     name='Y')
     return X, K, Y, PaddedX, PackedX, PackedK, PackedY
@@ -96,7 +97,7 @@ Let's quickly compile it using the default scheduling to compute the results.
 c, n, k, p, s, tc = 32, 64, 3, 1, 1, 16
 
 X, K, Y, _, _, _, _ = depthwise_conv(c, n, n, k, k, p, p, s, s, tc)
-mod = tvm.build(tvm.create_schedule(Y.op), [X, K, Y])
+mod = tvm.build(te.create_schedule(Y.op), [X, K, Y])
 
 data, weight, out = d2ltvm.get_conv_data(c, c, n, k, p, s, tvm.nd.array, conv_type='depthwise')
 mod(data, weight, out)
@@ -123,7 +124,7 @@ tc, tw = 16, 4
 def depthwise_cached_block(c, n, k, p, s):
     X, K, Y, PaddedX, PackedX, PackedK, PackedY = depthwise_conv(
         c, n, n, k, k, p, p, s, s, tc)
-    sch = tvm.create_schedule(Y.op)
+    sch = te.create_schedule(Y.op)
 
     CachedY = sch.cache_write(PackedY, 'global')
 

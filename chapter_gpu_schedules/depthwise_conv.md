@@ -8,6 +8,7 @@ import d2ltvm
 import numpy as np
 import timeit
 import tvm
+from tvm import te
 
 target = 'cuda'
 ```
@@ -36,11 +37,11 @@ In order to show the effectiveness of scheduling, we first apply a default sched
 ```{.python .input  n=3}
 def default_sch(ic, n, k, p, s):
     X, K, Y, PaddedX = d2ltvm.depthwise_conv(ic, n, n, k, k, p, p, s, s)
-    sch = tvm.create_schedule(Y.op)
+    sch = te.create_schedule(Y.op)
     sch[PaddedX].compute_inline()
     _, y, x = sch[Y].op.axis
-    sch[Y].bind(y, tvm.thread_axis("blockIdx.x"))
-    sch[Y].bind(x, tvm.thread_axis("threadIdx.x"))
+    sch[Y].bind(y, te.thread_axis("blockIdx.x"))
+    sch[Y].bind(x, te.thread_axis("threadIdx.x"))
     return sch, (X, K, Y)
 
 default_tvm_gflops = d2ltvm.bench_depthwise_conv_tvm(default_sch, sizes, target)
@@ -67,7 +68,7 @@ tile_w = [64, 1] # making each thread take 1 column
 
 def schedule(ic, n, k, p, s):
     X, K, Y, PaddedX = d2ltvm.depthwise_conv(ic, n, n, k, k, p, p, s, s)
-    sch = tvm.create_schedule(Y.op)
+    sch = te.create_schedule(Y.op)
     sch[PaddedX].compute_inline()
 
     YL = sch.cache_write(Y, 'local')
@@ -83,12 +84,12 @@ def schedule(ic, n, k, p, s):
     bh, th, ih = d2ltvm.split_axis(tile_h, sch, Y, h)
     bw, tw, iw = d2ltvm.split_axis(tile_w, sch, Y, w)
     
-    sch[Y].bind(bc, tvm.thread_axis("blockIdx.z"))
-    sch[Y].bind(bh, tvm.thread_axis("blockIdx.y"))
-    sch[Y].bind(bw, tvm.thread_axis("blockIdx.x"))
-    sch[Y].bind(tc, tvm.thread_axis("threadIdx.z"))
-    sch[Y].bind(th, tvm.thread_axis("threadIdx.y"))
-    sch[Y].bind(tw, tvm.thread_axis("threadIdx.x"))
+    sch[Y].bind(bc, te.thread_axis("blockIdx.z"))
+    sch[Y].bind(bh, te.thread_axis("blockIdx.y"))
+    sch[Y].bind(bw, te.thread_axis("blockIdx.x"))
+    sch[Y].bind(tc, te.thread_axis("threadIdx.z"))
+    sch[Y].bind(th, te.thread_axis("threadIdx.y"))
+    sch[Y].bind(tw, te.thread_axis("threadIdx.x"))
     sch[Y].reorder(bc, bh, bw, tc, th, tw, ic, ih, iw)
 
     sch[YL].compute_at(sch[Y], tw)
@@ -106,9 +107,9 @@ def schedule(ic, n, k, p, s):
         tz, fused = sch[load].split(fused, nparts=tile_c[0])
         ty, fused = sch[load].split(fused, nparts=tile_h[0])
         tx, _ = sch[load].split(fused, nparts=tile_w[0])
-        sch[load].bind(tz, tvm.thread_axis("threadIdx.z"))
-        sch[load].bind(ty, tvm.thread_axis("threadIdx.y"))
-        sch[load].bind(tx, tvm.thread_axis("threadIdx.x"))
+        sch[load].bind(tz, te.thread_axis("threadIdx.z"))
+        sch[load].bind(ty, te.thread_axis("threadIdx.y"))
+        sch[load].bind(tx, te.thread_axis("threadIdx.x"))
     return sch, (X, K, Y)
 
 tvm_gflops = d2ltvm.bench_depthwise_conv_tvm(schedule, sizes, target)

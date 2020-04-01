@@ -8,6 +8,7 @@ However, for large matrices, we need to carefully consider the cache hierarchy d
 ```{.python .input  n=1}
 %matplotlib inline
 import tvm
+from tvm import te
 import numpy as np
 import d2ltvm
 
@@ -49,7 +50,7 @@ tx, ty, tk = 32, 32, 4  # tile sizes
 
 def block(n):
     A, B, C = d2ltvm.matmul(n, n, n)
-    s = tvm.create_schedule(C.op)
+    s = te.create_schedule(C.op)
     # Tile by blocks, and then parallelize the computation of each block
     xo, yo, xi, yi = s[C].tile(*C.op.axis, tx, ty)
     xy = s[C].fuse(xo, yo)
@@ -81,7 +82,7 @@ The non-continuous write issue is severer than the non-continuous read. This is 
 ```{.python .input  n=39}
 def cached_block(n):
     A, B, C = d2ltvm.matmul(n, n, n)
-    s = tvm.create_schedule(C.op)
+    s = te.create_schedule(C.op)
     # Create a write cache for C
     CachedC = s.cache_write(C, 'local')
     # Same as before, first tile by blocks, and then parallelize the

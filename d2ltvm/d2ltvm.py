@@ -7,6 +7,7 @@ d2ltvm = sys.modules[__name__]
 
 # Defined in file: ./chapter_getting_started/install.md
 import tvm
+from tvm import te
 import time
 import timeit
 import numpy as np
@@ -34,9 +35,9 @@ def get_abc(shape, constructor=None):
 # Defined in file: ./chapter_getting_started/vector_add.md
 def vector_add(n):
     """TVM expression for vector add"""
-    A = tvm.placeholder((n,), name='a')
-    B = tvm.placeholder((n,), name='b')
-    C = tvm.compute(A.shape, lambda i: A[i] + B[i], name='c')
+    A = te.placeholder((n,), name='a')
+    B = te.placeholder((n,), name='b')
+    C = te.compute(A.shape, lambda i: A[i] + B[i], name='c')
     return A, B, C
 
 
@@ -60,13 +61,13 @@ def broadcast_add(shape1, shape2):
     for i in range(len(shape1)):
         assert shape1[i] == shape2[i] or shape1[i] == 1 or shape2[i] == 1, \
             "tensor shapes do not fit for broadcasting"
-    A = tvm.placeholder(shape1, name='A')
-    B = tvm.placeholder(shape2, name='B')
+    A = te.placeholder(shape1, name='A')
+    B = te.placeholder(shape2, name='B')
     m = shape1[0] if shape2[0] == 1 else shape2[0]
     n = shape1[1] if shape2[1] == 1 else shape2[1]
     f = lambda x, y: A[0 if shape1[0]==1 else x, 0 if shape1[1]==1 else y] + \
         B[0 if shape2[0]==1 else x, 0 if shape2[1]==1 else y]
-    C = tvm.compute((m, n), f, name='C')
+    C = te.compute((m, n), f, name='C')
     return A, B, C
 
 
@@ -96,11 +97,11 @@ def matmul(n, m, l):
     B : l x m matrix
     C : n x m matrix with C = A B
     """
-    k = tvm.reduce_axis((0, l), name='k')
-    A = tvm.placeholder((n, l), name='A')
-    B = tvm.placeholder((l, m), name='B')
-    C = tvm.compute((n, m),
-                    lambda x, y: tvm.sum(A[x, k] * B[k, y], axis=k),
+    k = te.reduce_axis((0, l), name='k')
+    A = te.placeholder((n, l), name='A')
+    B = te.placeholder((l, m), name='B')
+    C = te.compute((n, m),
+                    lambda x, y: te.sum(A[x, k] * B[k, y], axis=k),
                     name='C')
     return A, B, C
 
@@ -113,10 +114,10 @@ def padding(X, ph, pw):
     """
     assert len(X.shape) >= 2
     nh, nw = X.shape[-2], X.shape[-1]
-    return tvm.compute(
+    return te.compute(
             (*X.shape[0:-2], nh+ph*2, nw+pw*2),
-            lambda *i: tvm.if_then_else(
-                tvm.any(i[-2]<ph, i[-2]>=nh+ph, i[-1]<pw, i[-1]>=nw+pw),
+            lambda *i: te.if_then_else(
+                te.any(i[-2]<ph, i[-2]>=nh+ph, i[-1]<pw, i[-1]>=nw+pw),
                 0, X[i[:-2]+(i[-2]-ph, i[-1]-pw)]),
             name='PaddedX')
 
@@ -141,19 +142,19 @@ def conv(oc, ic, nh, nw, kh, kw, ph=0, pw=0, sh=1, sw=1):
     sh, sw : height and width strides, default 1
     """
     # reduction axes
-    ric = tvm.reduce_axis((0, ic), name='ric')
-    rkh = tvm.reduce_axis((0, kh), name='rkh')
-    rkw = tvm.reduce_axis((0, kw), name='rkw')
+    ric = te.reduce_axis((0, ic), name='ric')
+    rkh = te.reduce_axis((0, kh), name='rkh')
+    rkw = te.reduce_axis((0, kw), name='rkw')
     # output height and weights
     oh = conv_out_size(nh, kh, ph, sh)
     ow = conv_out_size(nw, kw, pw, sw)
     # pad X and then compute Y
-    X = tvm.placeholder((ic, nh, nw), name='X')
-    K = tvm.placeholder((oc, ic, kh, kw), name='K')
+    X = te.placeholder((ic, nh, nw), name='X')
+    K = te.placeholder((oc, ic, kh, kw), name='K')
     PaddedX = padding(X, ph, pw) if ph * pw != 0 else X
-    Y = tvm.compute(
+    Y = te.compute(
         (oc, oh, ow),
-        lambda c, i, j: tvm.sum(
+        lambda c, i, j: te.sum(
             PaddedX[ric, i*sh+rkh, j*sw+rkw] * K[c, ric, rkh, rkw],
             axis=[ric, rkh, rkw]), name='Y')
     return X, K, Y, PaddedX
@@ -202,18 +203,18 @@ def depthwise_conv(ic, nh, nw, kh, kw, ph=0, pw=0, sh=1, sw=1):
     sh, sw : height and width strides, default 1
     """
     # reduction axes
-    rkh = tvm.reduce_axis((0, kh), name='rkh')
-    rkw = tvm.reduce_axis((0, kw), name='rkw')
+    rkh = te.reduce_axis((0, kh), name='rkh')
+    rkw = te.reduce_axis((0, kw), name='rkw')
     # output height and weights
     oh = conv_out_size(nh, kh, ph, sh)
     ow = conv_out_size(nw, kw, pw, sw)
     # pad X and then compute Y
-    X = tvm.placeholder((ic, nh, nw), name='X')
-    K = tvm.placeholder((ic, 1, kh, kw), name='K')
+    X = te.placeholder((ic, nh, nw), name='X')
+    K = te.placeholder((ic, 1, kh, kw), name='K')
     PaddedX = padding(X, ph, pw) if ph * pw != 0 else X
-    Y = tvm.compute(
+    Y = te.compute(
         (ic, oh, ow),
-        lambda c, i, j: tvm.sum(
+        lambda c, i, j: te.sum(
             (PaddedX[c, i*sh+rkh, j*sw+rkw] * K[c, 0, rkh, rkw]),
             axis=[rkh, rkw]), name='Y')
     
@@ -463,11 +464,11 @@ def split_axis(factors, sch, op, axis):
         ----------
         factors: array of integers
             The factors that the split applies
-        sch: tvm.schedule.Schedule
+        sch: tvm.te.schedule.Schedule
             The tvm schedule
-        op: tvm.tensor.Operation
+        op: tvm.te.tensor.Operation
             The stage to be applied
-        axis: tvm.schedule.IterVar
+        axis: tvm.te.schedule.IterVar
             axis to split
 
         Returns

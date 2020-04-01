@@ -8,7 +8,7 @@ import d2ltvm
 import numpy as np
 import mxnet as mx
 import tvm
-from tvm import rpc, relay
+from tvm import te, rpc, relay
 from PIL import Image
 ```
 
@@ -52,7 +52,7 @@ n = 100
 target = 'llvm -target=x86_64-pc-linux-gnu'
 
 args = d2ltvm.vector_add(n)
-s = tvm.create_schedule(args[-1].op)
+s = te.create_schedule(args[-1].op)
 mod = tvm.build(s, args, target)
 ```
 

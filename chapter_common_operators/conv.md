@@ -7,12 +7,13 @@ The convolution (*CONV*) operator is the one of the most expensive and popular o
 import d2ltvm
 import numpy as np
 import tvm
+from tvm import te
 ```
 
 ## Padding
 
-As a prerequisite to convolution, let's first implement *padding*, which visually surrounds the targeting tensor with a "shell" surrounding it. The padding values are normally 0. Note that we briefly touched padding in :numref:`ch_all_any` when introducing `tvm.any`, which was a padding for a 2-D matrix.
-Here we generalize the padding to work for 2-D convolution on $n$-D tensors, which is usually used in the convolution operators of neural networks. In the general case, we assume the last two dimensions are rows and columns, 0s are only padded on these two dimensions. In particular, if the matrix height (i.e. number of rows) is $n_h$ and width (i.e. number of columns) is $n_w$, then we will pad $p_h$ rows with 0s on top and bottom, and $p_w$ columns with 0s on left and right to make its height and width to $n_h+2p_h$ and $n_w+2p_w$, respectively. We have mentioned it once in :numref:`ch_shapes`, but again note that `*X` and `*i` in `tvm.compute` are used to represent general multi-dimensional tensors.
+As a prerequisite to convolution, let's first implement *padding*, which visually surrounds the targeting tensor with a "shell" surrounding it. The padding values are normally 0. Note that we briefly touched padding in :numref:`ch_all_any` when introducing `te.any`, which was a padding for a 2-D matrix.
+Here we generalize the padding to work for 2-D convolution on $n$-D tensors, which is usually used in the convolution operators of neural networks. In the general case, we assume the last two dimensions are rows and columns, 0s are only padded on these two dimensions. In particular, if the matrix height (i.e. number of rows) is $n_h$ and width (i.e. number of columns) is $n_w$, then we will pad $p_h$ rows with 0s on top and bottom, and $p_w$ columns with 0s on left and right to make its height and width to $n_h+2p_h$ and $n_w+2p_w$, respectively. We have mentioned it once in :numref:`ch_shapes`, but again note that `*X` and `*i` in `te.compute` are used to represent general multi-dimensional tensors.
 
 ```{.python .input  n=53}
 # Save to the d2ltvm package.
@@ -23,10 +24,10 @@ def padding(X, ph, pw):
     """
     assert len(X.shape) >= 2
     nh, nw = X.shape[-2], X.shape[-1]
-    return tvm.compute(
+    return te.compute(
             (*X.shape[0:-2], nh+ph*2, nw+pw*2),
-            lambda *i: tvm.if_then_else(
-                tvm.any(i[-2]<ph, i[-2]>=nh+ph, i[-1]<pw, i[-1]>=nw+pw),
+            lambda *i: te.if_then_else(
+                te.any(i[-2]<ph, i[-2]>=nh+ph, i[-1]<pw, i[-1]>=nw+pw),
                 0, X[i[:-2]+(i[-2]-ph, i[-1]-pw)]),
             name='PaddedX')
 ```
@@ -34,9 +35,9 @@ def padding(X, ph, pw):
 Verify the results for a 3-D tensor.
 
 ```{.python .input  n=51}
-A = tvm.placeholder((2,3,4))
+A = te.placeholder((2,3,4))
 B = padding(A, 1, 2)
-s = tvm.create_schedule(B.op)
+s = te.create_schedule(B.op)
 mod = tvm.build(s, [A, B])
 
 a = tvm.nd.array(np.ones((2,3,4), dtype='float32'))
@@ -103,19 +104,19 @@ def conv(oc, ic, nh, nw, kh, kw, ph=0, pw=0, sh=1, sw=1):
     sh, sw : height and width strides, default 1
     """
     # reduction axes
-    ric = tvm.reduce_axis((0, ic), name='ric')
-    rkh = tvm.reduce_axis((0, kh), name='rkh')
-    rkw = tvm.reduce_axis((0, kw), name='rkw')
+    ric = te.reduce_axis((0, ic), name='ric')
+    rkh = te.reduce_axis((0, kh), name='rkh')
+    rkw = te.reduce_axis((0, kw), name='rkw')
     # output height and weights
     oh = conv_out_size(nh, kh, ph, sh)
     ow = conv_out_size(nw, kw, pw, sw)
     # pad X and then compute Y
-    X = tvm.placeholder((ic, nh, nw), name='X')
-    K = tvm.placeholder((oc, ic, kh, kw), name='K')
+    X = te.placeholder((ic, nh, nw), name='X')
+    K = te.placeholder((oc, ic, kh, kw), name='K')
     PaddedX = padding(X, ph, pw) if ph * pw != 0 else X
-    Y = tvm.compute(
+    Y = te.compute(
         (oc, oh, ow),
-        lambda c, i, j: tvm.sum(
+        lambda c, i, j: te.sum(
             PaddedX[ric, i*sh+rkh, j*sw+rkw] * K[c, ric, rkh, rkw],
             axis=[ric, rkh, rkw]), name='Y')
     return X, K, Y, PaddedX
@@ -151,7 +152,7 @@ Now compile a module and compute the results.
 ```{.python .input}
 oc, ic, n, k, p, s = 4, 6, 12, 3, 1, 1
 X, K, Y, _ = conv(oc, ic, n, n, k, k, p, p, s, s)
-sch = tvm.create_schedule(Y.op)
+sch = te.create_schedule(Y.op)
 mod = tvm.build(sch, [X, K, Y])
 print(tvm.lower(sch, [X, K, Y], simple_mode=True))
 
