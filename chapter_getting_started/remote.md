@@ -68,7 +68,7 @@ mod.export_library(mod_fname)
 We first connect to the remote machine with the IP we checked before.
 
 ```{.python .input  n=4}
-remote = rpc.connect('172.31.37.159', 9090)
+remote = rpc.connect('172.31.0.149', 9090)
 ```
 
 Next, we send the compiled library to the machine and load it into the memory of the remote machine.
