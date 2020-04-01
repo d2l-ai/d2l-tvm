@@ -56,7 +56,6 @@ If you plan to run on Nvidia GPUs as well, you will also need to
 set(USE_CUDA ON)
 ```
 
-
 Also
 don't forget to enable `cython`, which accelerates the performance. You just
 need to run `make cython` in the TVM source folder.
@@ -68,6 +67,7 @@ may use the pre-built library that is for evaluating this book:
 pip install https://tvm-repo.s3-us-west-2.amazonaws.com/tvm-0.7.dev1-cp37-cp37m-linux_x86_64.whl
 ```
 
+Our code runs on tvm-0.7-dev1 for now.
 
 Finally, install MXNet's CUDA version if GPUs are available :cite:`Chen.Li.Li.ea.2015`. Assume you are have
 CUDA 10.1 installed, then
