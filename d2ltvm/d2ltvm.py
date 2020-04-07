@@ -240,6 +240,57 @@ def depthwise_conv_mxnet(data, weight, bias, out, k, p, s):
                       out=out, num_group=weight.shape[0])
 
 
+# Defined in file: ./chapter_common_operators/pooling.md
+def pool(pool_type, c, nh, nw, kh, kw, ph=0, pw=0, sh=1, sw=1):
+    """2D pooling
+    
+    pool_type: pooling type, 'max' or 'avg'
+    c : channels
+    nh, nw : input width and height
+    kh, kw : kernel width and height
+    ph, pw : height and width padding sizes, default 0
+    sh, sw : height and width strides, default 1
+    """
+    # reduction axes
+    rkh = te.reduce_axis((0, kh), name='rkh')
+    rkw = te.reduce_axis((0, kw), name='rkw')
+    # output height and weights
+    oh = d2ltvm.conv_out_size(nh, kh, ph, sh)
+    ow = d2ltvm.conv_out_size(nw, kw, pw, sw)
+    # pad X and then compute Y
+    X = te.placeholder((c, nh, nw), name='X')
+    
+    
+    if pool_type == 'max':
+        PaddedX = d2ltvm.padding(X, ph, pw, val=te.min_value(X.dtype)) \
+            if ph * pw != 0 else X
+        Y = te.compute((c, oh, ow), \
+                            lambda c, h, w: \
+                            te.max(PaddedX[c, h*sh+rkh, w*sw+rkw], \
+                                axis=[rkh, rkw]), \
+                            tag="pool_max")
+    elif pool_type == 'avg':
+        PaddedX = d2ltvm.padding(X, ph, pw) if ph * pw != 0 else X
+        tsum = te.compute((c, oh, ow), \
+                            lambda c, h, w: \
+                            te.sum(PaddedX[c, h*sh+rkh, w*sw+rkw], \
+                                axis=[rkh, rkw]), \
+                            tag="pool_avg1")
+        Y = te.compute((c, oh, ow), \
+                            lambda c, h, w: \
+                            tsum[c, h, w] / (kh*kw), \
+                            tag='pool_avg2')
+    else:
+        raise ValueError("Pool type should be 'avg' or 'max'.")
+    return X, Y, PaddedX
+
+
+# Defined in file: ./chapter_common_operators/pooling.md
+def pool_mxnet(pool_type, data, out, k, p, s):
+    mx.nd.Pooling(data, kernel=(k,k), stride=(s,s),
+                      pad=(p,p), pool_type=pool_type, out=out)
+
+
 # Defined in file: ./chapter_cpu_schedules/call_overhead.md
 def bench_workload(workload):
     """Benchmark a workload
