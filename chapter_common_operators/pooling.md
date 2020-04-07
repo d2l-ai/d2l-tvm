@@ -7,7 +7,7 @@ There are two types of pooling, `max pooling` which returns the maximal value of
 
 :numref:`fig_pooling` illustrate how 2D `max pooling` and `avg pooling` work, with the following setting: kernel size `[3, 3]`, stride `[1, 1]`, and padding `[1, 1]`.
 
-![2D max and average poolings. Note that besides the algorithm, the padding values are also different.](../img/pooling.svg)
+![2D max and average poolings. The blue shape indicates a particular pooling step. Note that besides the algorithm, the padding values are also different.](../img/pooling.svg)
 :label:`fig_pooling`
 
 ```{.python .input}
