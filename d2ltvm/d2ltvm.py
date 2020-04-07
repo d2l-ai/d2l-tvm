@@ -107,10 +107,11 @@ def matmul(n, m, l):
 
 
 # Defined in file: ./chapter_common_operators/conv.md
-def padding(X, ph, pw):
-    """Pad X with 0s in 2-D
+def padding(X, ph, pw, val=0):
+    """Pad X with the given value in 2-D
 
     ph, pw : height and width padding
+    val : padding value, default 0
     """
     assert len(X.shape) >= 2
     nh, nw = X.shape[-2], X.shape[-1]
@@ -118,7 +119,7 @@ def padding(X, ph, pw):
             (*X.shape[0:-2], nh+ph*2, nw+pw*2),
             lambda *i: te.if_then_else(
                 te.any(i[-2]<ph, i[-2]>=nh+ph, i[-1]<pw, i[-1]>=nw+pw),
-                0, X[i[:-2]+(i[-2]-ph, i[-1]-pw)]),
+                val, X[i[:-2]+(i[-2]-ph, i[-1]-pw)]),
             name='PaddedX')
 
 
