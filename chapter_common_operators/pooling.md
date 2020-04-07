@@ -1,7 +1,7 @@
 # Pooling
 :label:`ch_pooling`
 
-This section talks about how to use TVM to do pooling. Pooling is a common operator in CNN, please refer to xxx if you are not familiar with this operator. Here we will skip the why, only focus on how.
+This section talks about how to use TVM to do pooling. Pooling is a common operator in CNN, please refer to chapter [6.5](https://d2l.ai/chapter_convolutional-neural-networks/pooling.html) in D2L if you are not familiar with this operator. Here we will skip the why, only focus on how.
 
 There are two types of pooling, `max pooling` which returns the maximal value of a pool, and `avg pooling` which returns the average value of a pool. For simplicity, we work on 2D pooling in this section. Like conv2d, the pooling operator moves the pooling kernel across the feature map with some stride. Sometimes padding is needed to match the required output size. Pooling has significantly less computation than conv2d as it only needs to get the maximal or average value. It is a memory-bound operator.
 
