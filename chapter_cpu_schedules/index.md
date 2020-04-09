@@ -18,5 +18,6 @@ block_matmul
 conv
 packed_conv
 depthwise_conv
+pooling
 ```
 
