@@ -268,21 +268,30 @@ def pool(pool_type, c, nh, nw, kh, kw, ph=0, pw=0, sh=1, sw=1):
                             lambda c, h, w: \
                             te.max(PaddedX[c, h*sh+rkh, w*sw+rkw], \
                                 axis=[rkh, rkw]), \
-                            tag="pool_max")
+                            tag="pool_max", name='PoolMax')
     elif pool_type == 'avg':
         PaddedX = d2ltvm.padding(X, ph, pw) if ph * pw != 0 else X
         tsum = te.compute((c, oh, ow), \
                             lambda c, h, w: \
                             te.sum(PaddedX[c, h*sh+rkh, w*sw+rkw], \
                                 axis=[rkh, rkw]), \
-                            tag="pool_avg1")
+                            tag="pool_avg1", name='PoolSum')
         Y = te.compute((c, oh, ow), \
                             lambda c, h, w: \
                             tsum[c, h, w] / (kh*kw), \
-                            tag='pool_avg2')
+                            tag='pool_avg2', name='PoolAvg')
     else:
         raise ValueError("Pool type should be 'avg' or 'max'.")
     return X, Y, PaddedX
+
+
+# Defined in file: ./chapter_common_operators/pooling.md
+def get_pool_data_mxnet(c, n, k, p, s, ctx='cpu'):
+    ctx = getattr(mx, ctx)()
+    data, _, out = d2ltvm.get_conv_data(c, c, n, k, p, s,
+                                      lambda x: mx.nd.array(x, ctx=ctx))
+    data, out = data.expand_dims(axis=0), out.expand_dims(axis=0)
+    return data, out
 
 
 # Defined in file: ./chapter_common_operators/pooling.md
