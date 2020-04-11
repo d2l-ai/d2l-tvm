@@ -3,7 +3,6 @@
 
 In this section, we will optimize the vector add defined in :numref:`ch_pooling` on CPU.
 
-## Setup
 
 ```{.python .input  n=1}
 %matplotlib inline
@@ -124,7 +123,6 @@ mxnet_max_times = bench_pooling_mxnet('max', sizes)
 Then we plot the results to compare. Note that we are plotting the execution time, so lower is better.
 
 ```{.python .input  n=6}
-# may change to ms
 times = [mxnet_max_times, default_max_times, optimized_max_times]
 d2ltvm.plot(channels, times, ylabel='s',
             xscale='log', yscale='log',
