@@ -501,6 +501,53 @@ def bench_depthwise_conv_mxnet(sizes, ctx='cpu'):
             for c, n, k in sizes]
 
 
+# Defined in file: ./chapter_cpu_schedules/pooling.md
+def bench_pooling_tvm(func, sizes, target):
+    """Benchmark pooling in TVM
+    
+    func : the scheduling method
+    sizes : the data size list, each of which is a (channel, input_hw, kernel_hw) triplet
+    target : the TVM target, e.g. llvm or cuda
+    """
+    def workload(nrepeats):
+        timer = mod.time_evaluator(mod.entry_name, ctx=ctx, number=nrepeats)
+        return timer(data, out_max).mean * nrepeats
+    times = []
+    for size in sizes:
+        sch, args = func(size)
+        mod = tvm.build(sch, args, target)
+        ctx = tvm.context(target, 0)
+        data, _, out_max = d2ltvm.get_conv_data(size[0], size[0], size[1], size[2], 1, 1, tvm.nd.array)
+        times.append(d2ltvm.bench_workload(workload))
+    return np.array(times)
+
+
+# Defined in file: ./chapter_cpu_schedules/pooling.md
+def pooling_timer_mxnet(pool_type, c, n, k, ctx):
+    """Benchmark pooling in MXNet
+
+    c : channels
+    n : input width and height
+    k : kernel width and height
+    """
+    timer = timeit.Timer(
+        setup='import d2ltvm\n'
+        'import mxnet as mx\n'
+        'c, n, k, p, s = %d, %d, %d, 1, 1\n'
+        'data, out = d2ltvm.get_pool_data_mxnet(\n'
+        '    c, n, k, p, s, "%s")'%(c, n, k, ctx),
+        stmt='d2ltvm.pool_mxnet("%s", data, out, k, p, s);'
+        'out.wait_to_read()'%(pool_type))
+    return timer.timeit
+
+
+# Defined in file: ./chapter_cpu_schedules/pooling.md
+def bench_pooling_mxnet(pool_type, sizes, ctx='cpu'):
+    """Return the execution times of MXNet pooling"""
+    return [d2ltvm.bench_workload(pooling_timer_mxnet(pool_type, c, n, k, ctx))
+            for c, n, k in sizes]
+
+
 # Defined in file: ./chapter_gpu_schedules/matmul.md
 def matmul_timer_mxnet(n, ctx):
     """The matrix multiplication timer for MXNet
