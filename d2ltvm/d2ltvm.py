@@ -517,7 +517,8 @@ def bench_pooling_tvm(func, sizes, target):
         sch, args = func(size)
         mod = tvm.build(sch, args, target)
         ctx = tvm.context(target, 0)
-        data, _, out_max = d2ltvm.get_conv_data(size[0], size[0], size[1], size[2], 1, 1, tvm.nd.array)
+        data, _, out_max = d2ltvm.get_conv_data(size[0], size[0], size[1], size[2], 1, 1, 
+                                                lambda x: tvm.nd.array(x, ctx=ctx))
         times.append(d2ltvm.bench_workload(workload))
     return np.array(times)
 
