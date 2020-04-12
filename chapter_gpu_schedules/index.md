@@ -13,5 +13,6 @@ broadcast_add
 matmul
 conv
 depthwise_conv
+pooling
 ```
 
