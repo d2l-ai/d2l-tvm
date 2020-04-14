@@ -42,9 +42,14 @@ All these threads are grouped into blocks. If the block size is 100, 1 million t
 
 $$i = \text{blockIdx.x} \times \text{blockDim.x} + \text{threadIdx.x}$$
 
-It can be extended to 2-D and 3-D indexing schemes for both block and thread, where we just simply add `.y` and `.z` fields accordingly. Note that `x` is the innermost dimension while `z` is the outermost, and block is outer than thread, so the overall index of a thread in 1-D block and 3-D thread case can be calculated as
+It can be extended to 2-D and 3-D indexing schemes for both block and thread, where we just simply add `.y` and `.z` fields accordingly. Note that `x` is the innermost dimension while `z` is the outermost, and block is outer than thread.
+Multi-dimensional blocks make a grid (`gridDim.x` describes the number of blocks along the x axis), just as multi-dimensional threads make a block.
+So the overall index of a thread in 1-D block and 3-D thread case can be calculated as
 
-$$i = \text{blockIdx.x} \times \text{blockDim.x} \times \text{blockDim.y} \times \text{blockDim.z} + \text{threadIdx.z} \times \text{blockDim.x} \times \text{blockDim.y} + \text{blockDim.y} \times \text{blockDim.x} + \text{threadIdx.x}$$
+$$i = & \text{blockIdx.x} \times \text{blockDim.x} \times \text{blockDim.y} \times \text{blockDim.z} \\
+&+ \text{threadIdx.z} \times \text{blockDim.x} \times \text{blockDim.y} \\
+&+ \text{threadIdx.y} \times \text{blockDim.x} \\
+&+ \text{threadIdx.x}$$
 
 During execution, all threads in a single block will be executed in the same core, or streaming multiprocessor (SM). We could assume that they will be executed simultaneously so we can synchronize these threads in the middle of a kernel. Different blocks may run on different cores. 
 
