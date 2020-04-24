@@ -91,3 +91,7 @@ Lastly, it is easy to note that when the shapes of two input tensors are indenti
 ## Summary
 - We can define a broadcast operator in TVM.
 - Broadcast be can performed along multiple dimensions.
+
+EE Exercise
+- Generalize `broadcast_add` defined above to more dimensions and more operators.
+
