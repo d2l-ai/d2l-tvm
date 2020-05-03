@@ -300,6 +300,93 @@ def pool_mxnet(pool_type, data, out, k, p, s):
                       pad=(p,p), pool_type=pool_type, out=out)
 
 
+# Defined in file: ./chapter_common_operators/batch_norm.md
+import topi
+
+def batch_norm(c, n, eps=1e-5):
+    """batch normalization
+    
+    c : channels
+    N : input width and height
+    eps : small positive value to prevent divide 0
+    """
+    def bcast(A, B, op):
+        """Ad-hoc broadcast calculation, broadcasting B to A
+        A : te.Tensor
+        B : either a te.Tensor or a scalar
+        op ：arithmetic operator in string
+        """
+        # the shapes of two operands of broadcast should be identical
+        # or B should be a scalar
+        assert isinstance(B, float) or len(A.shape) == len(B.shape)
+        if op == '+':
+            #f = lambda x, y, z: A[x, y, z] + B[x, 0, 0]
+            #C = te.compute(A.shape, f, name='C')
+            C = A + B
+        elif op == '-':
+            C = A - B
+        elif op == '*':
+            C = A * B
+        elif op == '/':
+            C = A / B
+        else:
+            raise ValueError("op should be an arithmetic operator.") 
+        return C
+        
+    X = te.placeholder((c, n, n), name='X')
+    Mean = te.placeholder((c, 1, 1), name='Mean')
+    Var = te.placeholder((c, 1, 1), name='Var')
+    Gamma = te.placeholder((c, 1, 1), name='Gamma')
+    Beta = te.placeholder((c, 1, 1), name='Beta')
+    C1 = bcast(X, Mean, '-')
+    C2 = topi.sqrt(bcast(Var, eps, '+'))
+    Y = C1 / C2 * Gamma + Beta
+    return X, Mean, Var, Gamma, Beta, Y
+
+
+# Defined in file: ./chapter_common_operators/batch_norm.md
+def get_bn_data(c, n, constructor=None):
+    """Return the batch norm data, mean, variance, gamma and beta tensors.
+       Also return the empty tensor for output.
+
+    c : channels
+    n : input width and height
+    constructor : user-defined tensor constructor
+    """
+    np.random.seed(0)
+    data = np.random.normal(size=(c, n, n)).astype('float32')
+    mean = np.random.normal(size=(c, 1, 1)).astype('float32')
+    # move the mean of the normal distribution to be 1
+    var = np.random.normal(loc=1.0, size=(c, 1, 1)).astype('float32')
+    # make sure all variance numbers are not negative
+    var = np.absolute(var)
+    gamma = np.random.normal(size=(c, 1, 1)).astype('float32')
+    beta = np.random.normal(size=(c, 1, 1)).astype('float32')
+    out = np.empty((c, n, n), dtype='float32')
+    if constructor:
+        data, mean, var, gamma, beta, out = \
+        (constructor(x) for x in [data, mean, var, gamma, beta, out])
+    return data, mean, var, gamma, beta, out
+
+
+# Defined in file: ./chapter_common_operators/batch_norm.md
+def get_bn_data_mxnet(c, n, ctx='cpu'):
+    ctx = getattr(mx, ctx)()
+    data, mean, var, gamma, beta, out = get_bn_data(c, n,
+                                      lambda x: mx.nd.array(x, ctx=ctx))
+    data, out = data.expand_dims(axis=0), out.expand_dims(axis=0)
+    return data, mean, var, gamma, beta, out
+
+
+# Defined in file: ./chapter_common_operators/batch_norm.md
+def batch_norm_mxnet(data, mean, var, gamma, beta, out, eps=1e-5):
+    # use_global_stats=True to use the input mean and var instead of computing
+    # the mean and var of the input data.
+    # fix_gamma=False so that gamma won't be set to 1.
+    mx.nd.BatchNorm(data, gamma, beta, mean, var, eps, 
+                    use_global_stats=True, fix_gamma=False, out=out)
+
+
 # Defined in file: ./chapter_cpu_schedules/call_overhead.md
 def bench_workload(workload):
     """Benchmark a workload
