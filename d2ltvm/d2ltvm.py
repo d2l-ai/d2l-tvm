@@ -310,36 +310,14 @@ def batch_norm(c, n, eps=1e-5):
     N : input width and height
     eps : small positive value to prevent divide 0
     """
-    def bcast(A, B, op):
-        """Ad-hoc broadcast calculation, broadcasting B to A
-        A : te.Tensor
-        B : either a te.Tensor or a scalar
-        op ：arithmetic operator in string
-        """
-        # the shapes of two operands of broadcast should be identical
-        # or B should be a scalar
-        assert isinstance(B, float) or len(A.shape) == len(B.shape)
-        if op == '+':
-            #f = lambda x, y, z: A[x, y, z] + B[x, 0, 0]
-            #C = te.compute(A.shape, f, name='C')
-            C = A + B
-        elif op == '-':
-            C = A - B
-        elif op == '*':
-            C = A * B
-        elif op == '/':
-            C = A / B
-        else:
-            raise ValueError("op should be an arithmetic operator.") 
-        return C
         
     X = te.placeholder((c, n, n), name='X')
     Mean = te.placeholder((c, 1, 1), name='Mean')
     Var = te.placeholder((c, 1, 1), name='Var')
     Gamma = te.placeholder((c, 1, 1), name='Gamma')
     Beta = te.placeholder((c, 1, 1), name='Beta')
-    C1 = bcast(X, Mean, '-')
-    C2 = topi.sqrt(bcast(Var, eps, '+'))
+    C1 = X - Mean
+    C2 = topi.sqrt(Var + eps)
     Y = C1 / C2 * Gamma + Beta
     return X, Mean, Var, Gamma, Beta, Y
 
