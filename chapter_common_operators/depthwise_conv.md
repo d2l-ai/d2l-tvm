@@ -1,5 +1,5 @@
 # Depthwise Convolution
-:label:`ch_conv`
+:label:`ch_depthwise_conv`
 
 Depthwise convolution is a special kind of convolution commonly used in convolutional neural networks designed for mobile and embedded applications, e.g. MobileNet :cite:`Howard.Zhu.Chen.ea.2017`.
 
