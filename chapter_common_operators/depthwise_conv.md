@@ -1,7 +1,7 @@
 # Depthwise Convolution
 :label:`ch_conv`
 
-Depthwise convolution is a special kind of convolution commonly used in convolutional neural networks designed for mobile and embedding applications, e.g. MobileNet :cite:`Howard.Zhu.Chen.ea.2017`.
+Depthwise convolution is a special kind of convolution commonly used in convolutional neural networks designed for mobile and embedded applications, e.g. MobileNet :cite:`Howard.Zhu.Chen.ea.2017`.
 
 ```{.python .input  n=1}
 import d2ltvm
