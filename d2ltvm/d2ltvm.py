@@ -614,6 +614,54 @@ def bench_pooling_mxnet(pool_type, sizes, ctx='cpu'):
             for c, n, k in sizes]
 
 
+# Defined in file: ./chapter_cpu_schedules/batch_norm.md
+def bench_bn_tvm(func, sizes, target):
+    """Benchmark batch normalization in TVM
+
+    func : the scheduling method
+    sizes : the data size list, each of which is a (channel, input_hw) tuple
+    target : the TVM target, e.g. llvm or cuda
+    """
+    def workload(nrepeats):
+        timer = mod.time_evaluator(mod.entry_name, ctx=ctx, number=nrepeats)
+        return timer(data, mean, var, gamma, beta, out).mean * nrepeats
+    times = []
+    for size in sizes:
+        sch, args = func(size)
+        mod = tvm.build(sch, args, target)
+        ctx = tvm.context(target, 0)
+        data, mean, var, gamma, beta, out = d2ltvm.get_bn_data(size[0], size[1], 
+                                                               lambda x: tvm.nd.array(x, ctx=ctx))
+        times.append(d2ltvm.bench_workload(workload))
+    return np.array(times)
+
+
+# Defined in file: ./chapter_cpu_schedules/batch_norm.md
+def bn_timer_mxnet(c, n, ctx):
+    """Benchmark batch normalization in MXNet
+
+    c : channels
+    n : input width and height
+    ctx : compute ctx, e.g., cpu or gpu
+    """
+    timer = timeit.Timer(
+        setup='import d2ltvm\n'
+        'import mxnet as mx\n'
+        'c, n = %d, %d\n'
+        'data, mean, var, gamma, beta, out = d2ltvm.get_bn_data_mxnet(\n'
+        '    c, n, "%s")'%(c, n, ctx),
+        stmt='d2ltvm.batch_norm_mxnet(data, mean, var, gamma, beta, out);'
+        'out.wait_to_read()')
+    return timer.timeit
+
+
+# Defined in file: ./chapter_cpu_schedules/batch_norm.md
+def bench_bn_mxnet(sizes, ctx='cpu'):
+    """Return the execution times of MXNet batch norm"""
+    return [d2ltvm.bench_workload(bn_timer_mxnet(c, n, ctx))
+            for c, n in sizes]
+
+
 # Defined in file: ./chapter_gpu_schedules/matmul.md
 def matmul_timer_mxnet(n, ctx):
     """The matrix multiplication timer for MXNet
