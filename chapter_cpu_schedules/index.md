@@ -19,5 +19,6 @@ conv
 packed_conv
 depthwise_conv
 pooling
+batch_norm
 ```
 
