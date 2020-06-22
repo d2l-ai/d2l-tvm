@@ -36,14 +36,12 @@ def schedule_max(size):
     X, Y, PaddedX = d2ltvm.pool('max', c, n, n, k, k, 1, 1, 1, 1)
     sch = te.create_schedule(Y.op)
     sch[PaddedX].compute_inline()
-    YL = sch.cache_write(Y, "local")
     # traversal axes binding
     fused = sch[Y].fuse(*sch[Y].op.axis)
     bx, tx = sch[Y].split(fused, factor=nt)
     sch[Y].bind(bx, te.thread_axis("blockIdx.x"))
     sch[Y].bind(tx, te.thread_axis("threadIdx.x"))
-    # bringing reduction to the local memory
-    sch[YL].compute_at(sch[Y], tx)
+    
     return sch, (X, Y)
 
 # (channel, input width and height, kernel width and height)
@@ -64,16 +62,15 @@ def schedule_avg(size):
     X, Y, PaddedX = d2ltvm.pool('avg', c, n, n, k, k, 1, 1, 1, 1)
     sch = te.create_schedule(Y.op)
     sch[PaddedX].compute_inline()
-    YL = sch.cache_write(Y, "local")
+
     # traversal axes binding
     fused = sch[Y].fuse(*sch[Y].op.axis)
     bx, tx = sch[Y].split(fused, factor=nt)
     sch[Y].bind(bx, te.thread_axis("blockIdx.x"))
     sch[Y].bind(tx, te.thread_axis("threadIdx.x"))
-    # bringing reduction to the local memory
-    sch[YL].compute_at(sch[Y], tx)
+
     # merging two stages
-    PoolSum = Y.op.input_tensors[0]
+    PoolSum = Y.op.input_tensors[0]  
     sch[PoolSum].compute_at(sch[Y], tx)   
     return sch, (X, Y)
 
@@ -120,4 +117,7 @@ Note that we are plotting execution times, so low is better. Both results show t
 
 ## Summary
 - Scheduling pooling on GPUs are analogous to scheduling on CPUs, similar tricks can be used, e.g. `compute_inline` and `compute_at`.
-- Other than that, GPU specific optimization tricks are also used, e.g. thread and block binding, `cache_write`.
+- Other than that, GPU specific optimization tricks are also used, e.g., thread and block binding.
+
+## Exercise
+- Use `cache_read` and `cache_write` primitives to further schedule pooling, observe if there is any improvement, and think about the reason.
