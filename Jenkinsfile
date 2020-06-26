@@ -29,6 +29,7 @@ stage("Build and Publish") {
       conda activate ${ENV_NAME}
       export CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES}
       export LD_LIBRARY_PATH=/usr/local/cuda-10.1/lib64
+      export PATH=${PATH}:/usr/local/cuda-10.1/bin
       d2lbook build eval
       rm -rf _build/eval/*/*.tar* _build/eval/*/*.json _build/eval/*/*.params
       """
