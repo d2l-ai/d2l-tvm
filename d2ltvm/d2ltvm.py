@@ -14,9 +14,9 @@ import numpy as np
 from matplotlib import pyplot as plt
 from IPython import display
 try:
-  import mxnet as mx
+    import mxnet as mx
 except:
-  pass
+    pass
 
 
 # Defined in file: ./chapter_getting_started/vector_add.md
@@ -73,7 +73,7 @@ def broadcast_add(shape1, shape2):
 
 # Defined in file: ./chapter_common_operators/broadcast_add.md
 def get_bcast_data(shape1, shape2, constructor=None):
-    """Return random tensors a, b 
+    """Return random tensors a, b
     and empty tensor c to store broadcast results between a and b
 
     shape1, shape2: shapes of input tensors
@@ -82,7 +82,7 @@ def get_bcast_data(shape1, shape2, constructor=None):
     np.random.seed(0)
     a = np.random.normal(size=shape1).astype("float32")
     b = np.random.normal(size=shape2).astype("float32")
-    out_shape = (shape1[0] if shape2[0] == 1 else shape2[0], 
+    out_shape = (shape1[0] if shape2[0] == 1 else shape2[0],
                  shape1[1] if shape2[1] == 1 else shape2[1])
     c = np.empty(out_shape, dtype='float32')
     if constructor:
@@ -169,7 +169,7 @@ def conv_mxnet(data, weight, bias, out, k, p, s):
 
 # Defined in file: ./chapter_common_operators/depthwise_conv.md
 def get_conv_data(oc, ic, n, k, p=0, s=1, constructor=None, conv_type='direct'):
-    """Return random 3-D data tensor, 3-D kernel tenor and empty 3-D output 
+    """Return random 3-D data tensor, 3-D kernel tenor and empty 3-D output
     tensor with the shapes specified by input arguments.
 
     oc, ic : output and input channels
@@ -218,14 +218,14 @@ def depthwise_conv(ic, nh, nw, kh, kw, ph=0, pw=0, sh=1, sw=1):
         lambda c, i, j: te.sum(
             (PaddedX[c, i*sh+rkh, j*sw+rkw] * K[c, 0, rkh, rkw]),
             axis=[rkh, rkw]), name='Y')
-    
+
     return X, K, Y, PaddedX
 
 
 # Defined in file: ./chapter_common_operators/depthwise_conv.md
 def get_conv_data_mxnet(oc, ic, n, k, p, s, ctx='cpu', conv_type='direct'):
     ctx = getattr(mx, ctx)()
-    data, weight, out = get_conv_data(oc, ic, n, k, p, s, 
+    data, weight, out = get_conv_data(oc, ic, n, k, p, s,
                                       constructor=lambda x: mx.nd.array(x, ctx=ctx),
                                       conv_type=conv_type)
     data, out = data.expand_dims(axis=0), out.expand_dims(axis=0)
@@ -236,14 +236,14 @@ def get_conv_data_mxnet(oc, ic, n, k, p, s, ctx='cpu', conv_type='direct'):
 # Defined in file: ./chapter_common_operators/depthwise_conv.md
 def depthwise_conv_mxnet(data, weight, bias, out, k, p, s):
     mx.nd.Convolution(data, weight, bias, kernel=(k,k), stride=(s,s),
-                      pad=(p,p), num_filter=out.shape[1], 
+                      pad=(p,p), num_filter=out.shape[1],
                       out=out, num_group=weight.shape[0])
 
 
 # Defined in file: ./chapter_common_operators/pooling.md
 def pool(pool_type, c, nh, nw, kh, kw, ph=0, pw=0, sh=1, sw=1):
     """2D pooling
-    
+
     pool_type: pooling type, 'max' or 'avg'
     c : channels
     nh, nw : input width and height
@@ -259,8 +259,8 @@ def pool(pool_type, c, nh, nw, kh, kw, ph=0, pw=0, sh=1, sw=1):
     ow = d2ltvm.conv_out_size(nw, kw, pw, sw)
     # pad X and then compute Y
     X = te.placeholder((c, nh, nw), name='X')
-    
-    
+
+
     if pool_type == 'max':
         PaddedX = d2ltvm.padding(X, ph, pw, val=te.min_value(X.dtype)) \
             if ph * pw != 0 else X
@@ -305,12 +305,12 @@ import topi
 
 def batch_norm(c, n, eps=1e-5):
     """batch normalization
-    
+
     c : channels
     N : input width and height
     eps : small positive value to prevent divide 0
     """
-        
+
     X = te.placeholder((c, n, n), name='X')
     Mean = te.placeholder((c, 1, 1), name='Mean')
     Var = te.placeholder((c, 1, 1), name='Var')
@@ -361,15 +361,15 @@ def batch_norm_mxnet(data, mean, var, gamma, beta, out, eps=1e-5):
     # use_global_stats=True to use the input mean and var instead of computing
     # the mean and var of the input data.
     # fix_gamma=False so that gamma won't be set to 1.
-    mx.nd.BatchNorm(data, gamma, beta, mean, var, eps, 
+    mx.nd.BatchNorm(data, gamma, beta, mean, var, eps,
                     use_global_stats=True, fix_gamma=False, out=out)
 
 
 # Defined in file: ./chapter_cpu_schedules/call_overhead.md
 def bench_workload(workload):
     """Benchmark a workload
-    
-    workload: a method that accept a num_repeat argument 
+
+    workload: a method that accept a num_repeat argument
     and return its total execution time
     """
     workload(1)  # warmup
@@ -569,7 +569,7 @@ def bench_depthwise_conv_mxnet(sizes, ctx='cpu'):
 # Defined in file: ./chapter_cpu_schedules/pooling.md
 def bench_pooling_tvm(func, sizes, target):
     """Benchmark pooling in TVM
-    
+
     func : the scheduling method
     sizes : the data size list, each of which is a (channel, input_hw, kernel_hw) triplet
     target : the TVM target, e.g. llvm or cuda
@@ -582,7 +582,7 @@ def bench_pooling_tvm(func, sizes, target):
         sch, args = func(size)
         mod = tvm.build(sch, args, target)
         ctx = tvm.context(target, 0)
-        data, _, out_max = d2ltvm.get_conv_data(size[0], size[0], size[1], size[2], 1, 1, 
+        data, _, out_max = d2ltvm.get_conv_data(size[0], size[0], size[1], size[2], 1, 1,
                                                 lambda x: tvm.nd.array(x, ctx=ctx))
         times.append(d2ltvm.bench_workload(workload))
     return np.array(times)
@@ -630,7 +630,7 @@ def bench_bn_tvm(func, sizes, target):
         sch, args = func(size)
         mod = tvm.build(sch, args, target)
         ctx = tvm.context(target, 0)
-        data, mean, var, gamma, beta, out = d2ltvm.get_bn_data(size[0], size[1], 
+        data, mean, var, gamma, beta, out = d2ltvm.get_bn_data(size[0], size[1],
                                                                lambda x: tvm.nd.array(x, ctx=ctx))
         times.append(d2ltvm.bench_workload(workload))
     return np.array(times)
