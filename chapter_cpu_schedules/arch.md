@@ -69,7 +69,7 @@ float64 operations each time.
 ### Multi-cores
 
 SIMD improves the performance of a single core, another way is adding multiple
-cores to a single CPU processor. numref:`fig_cpu_parallel_arch` shows two CPU
+cores to a single CPU processor. :numref:`fig_cpu_parallel_arch` shows two CPU
 cores, each of which has 2 PUs. 
 
 It looks like that our CPU has 16 cores.

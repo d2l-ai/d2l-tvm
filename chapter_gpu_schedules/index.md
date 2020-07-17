@@ -14,5 +14,6 @@ matmul
 conv
 depthwise_conv
 pooling
+batch_norm
 ```
 
