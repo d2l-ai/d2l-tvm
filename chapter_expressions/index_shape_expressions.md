@@ -53,7 +53,7 @@ We can implement a general 2-D reshape function as well.
 
 ```{.python .input  n=31}
 p, q = te.var('p'), te.var('q')
-B = te.compute((p, q), lambda i, j: A[(i*q+j)//p, (i*q+j)%p], name='b')
+B = te.compute((p, q), lambda i, j: A[(i*q+j)//m, (i*q+j)%m], name='b')
 s = te.create_schedule(B.op)
 tvm.lower(s, [A, B], simple_mode=True)
 ```
