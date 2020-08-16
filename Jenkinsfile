@@ -11,7 +11,7 @@ stage("Build and Publish") {
       rm -rf ~/miniconda3/envs/${ENV_NAME}
       conda create -n ${ENV_NAME} pip python=3.7.3 -y
       conda activate ${ENV_NAME}
-      pip install mxnet-cu101mkl==1.6.0b20191004
+      pip install mxnet-cu101mkl==1.6.0.post0
       pip install psutil Pillow
       pip install https://tvm-repo.s3-us-west-2.amazonaws.com/tvm-0.7.dev1-cp37-cp37m-linux_x86_64.whl
       pip install https://tvm-repo.s3-us-west-2.amazonaws.com/topi-0.7.dev1-py3-none-any.whl
