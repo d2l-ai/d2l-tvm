@@ -108,7 +108,7 @@ def conv(oc, ic, nh, nw, kh, kw, ph=0, pw=0, sh=1, sw=1):
     ric = te.reduce_axis((0, ic), name='ric')
     rkh = te.reduce_axis((0, kh), name='rkh')
     rkw = te.reduce_axis((0, kw), name='rkw')
-    # output height and weights
+    # output height and width
     oh = conv_out_size(nh, kh, ph, sh)
     ow = conv_out_size(nw, kw, pw, sw)
     # pad X and then compute Y
