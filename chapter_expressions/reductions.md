@@ -33,7 +33,7 @@ sum_rows(a, b)
 b
 ```
 
-It's fairly straightforward, we first iterate on the first dimension, `axis=0`, and then sum all elements on the second dimension to write the results. In NumPy, we can use `:` to slice all elements along that dimension.
+It's fairly straightforward, we first iterate on the first dimension, `axis=1`, and then sum all elements on the second dimension to write the results. In NumPy, we can use `:` to slice all elements along that dimension.
 
 Now let's implement the same thing in TVM. Comparing to the vector addition in :numref:`ch_vector_add`, we used two new operators here. One is `tvm.reduce_axis`, which create an axis for reduction with range from 0 to `m`. It's functionally similar to the `:` used in `sum_rows`, but we need to explicitly specify the range in TVM. The other one is `tvm.sum`, which sums all elements along the reducing axis `k` and returns a scalar.
 
