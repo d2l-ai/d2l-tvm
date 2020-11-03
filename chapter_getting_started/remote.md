@@ -49,7 +49,7 @@ Let's run the vector addition defined :numref:`ch_vector_add` on the remote mach
 
 ```{.python .input  n=2}
 n = 100
-target = 'llvm -target=x86_64-pc-linux-gnu'
+target = 'llvm -mtriple=x86_64-pc-linux-gnu'
 
 args = d2ltvm.vector_add(n)
 s = te.create_schedule(args[-1].op)
