@@ -301,7 +301,7 @@ def pool_mxnet(pool_type, data, out, k, p, s):
 
 
 # Defined in file: ./chapter_common_operators/batch_norm.md
-import topi
+import topi # from tvm import topi # as of v0.7.0
 
 def batch_norm(c, n, eps=1e-5):
     """batch normalization

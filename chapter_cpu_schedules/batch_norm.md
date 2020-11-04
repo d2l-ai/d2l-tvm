@@ -15,7 +15,7 @@ from matplotlib import pyplot as plt
 import timeit
 import tvm
 from tvm import te
-import topi
+import topi # from tvm import topi # as of v0.7.0
 
 target = 'llvm -mcpu=skylake-avx512'
 ```
