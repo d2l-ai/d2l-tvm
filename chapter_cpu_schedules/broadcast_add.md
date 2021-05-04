@@ -30,7 +30,7 @@ np_bcast_add = lambda s1, s2: timeit.Timer(setup='import numpy as np\n'
 exe_times = [d2ltvm.bench_workload(np_bcast_add((n, 1), (n, n)).timeit) for n in sizes]
 np_gflops = sizes * sizes / 1e9 / np.array(exe_times)
 # data size in MB
-x_axis_sizes = (sizes * sizes * 2 + sizes * sizes) * 4 / 1e6
+x_axis_sizes = (sizes * sizes * 2 + sizes * 1) * 4 / 1e6
 d2ltvm.plot_gflops(x_axis_sizes, [np_gflops], ['numpy'], xlabel='Size (MB)')
 ```
 
