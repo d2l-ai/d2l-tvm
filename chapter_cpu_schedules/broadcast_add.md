@@ -77,7 +77,7 @@ s, args = good_schedule(64)
 print(tvm.lower(s, args, simple_mode=True))
 ```
 
-Now the C-like pseudo code should be familiar to you. One notable difference from :numref:ch_vector_add_cpu is that we broadcast `A[x]` to a vectorized register (i.e. `x64(A[x]`) for vectorized add.
+Now the C-like pseudo code should be familiar to you. One notable difference from :numref:`ch_vector_add_cpu` is that we broadcast `A[x]` to a vectorized register (i.e. `x64(A[x]`) for vectorized add.
 
 Let's benchmark the good schedule.
 
