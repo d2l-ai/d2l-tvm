@@ -91,8 +91,8 @@ You can view `mod` as a TVM module we already seen in :numref:`ch_vector_add`.
 Now we can create a runtime to run the model inference, namely the forward pass of a neural network. Creating the runtime needs the neural network definition in json (i.e. `graph`) and the library that contains machine code of compiled operators (i.e. `mod`), with a device context that can be constructed from the target. The device is CPU here, specified by `llvm`. Next we load the parameters with `set_input` and run the workload by feeding the input data. Since this network has a single output layer, we can obtain it, a `(1, 1000)` shape matrix, by `get_output(0)`. The final output is a 1000-length NumPy vector.
 
 ```{.python .input  n=9}
-ctx = tvm.context(target)
-rt = tvm.contrib.graph_runtime.create(graph, mod, ctx)
+ctx = tvm.device(target)
+rt = tvm.contrib.graph_executor.create(graph, mod, ctx)
 rt.set_input(**params)
 rt.run(data=tvm.nd.array(x))
 scores = rt.get_output(0).asnumpy()[0]
@@ -135,11 +135,11 @@ loaded_params = open(params_fn, "rb").read()
 And then construct the runtime as before to verify the results
 
 ```{.python .input  n=13}
-loaded_rt = tvm.contrib.graph_runtime.create(loaded_graph, loaded_mod, ctx)
+loaded_rt = tvm.contrib.graph_executor.create(loaded_graph, loaded_mod, ctx)
 loaded_rt.load_params(loaded_params)
 loaded_rt.run(data=tvm.nd.array(x))
 loaded_scores = loaded_rt.get_output(0).asnumpy()[0]
-tvm.testing.assert_allclose(loaded_scores, scores)
+np.testing.assert_allclose(loaded_scores, scores)
 ```
 
 ## Summary
