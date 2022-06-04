@@ -43,7 +43,7 @@ In each submatrix computation, we need to write a `[tx, ty]` shape matrix, and r
 
 Let's implement this idea. In the following code block, we choose `tx=ty=32` and `tk=4` so that the submatrix to write has a size of `32*32*4=4KB` and the total size of the two submatrices to read is `2*32*4*4=1KB`. The three matrices together can fit into our L1 cache easily. The tiling is implemented by the `tile` primitive.
 
-After tiling, we merge the outer width and height axes into a single one using the `fuse` primitive, so we can parallelize it. It means that we will compute blocks in parallel. Within a block, we split the reduced axis, reorder the axes as we did in:numref:`ch_matmul_cpu`, and then vectorize the innermost axis using SIMD instructions, and unroll the second innermost axis using the `unroll` primitive, namely the inner reduction axis.
+After tiling, we merge the outer width and height axes into a single one using the `fuse` primitive, so we can parallelize it. It means that we will compute blocks in parallel. Within a block, we split the reduced axis, reorder the axes as we did in :numref:`ch_matmul_cpu`, and then vectorize the innermost axis using SIMD instructions, and unroll the second innermost axis using the `unroll` primitive, namely the inner reduction axis.
 
 ```{.python .input  n=10}
 tx, ty, tk = 32, 32, 4  # tile sizes

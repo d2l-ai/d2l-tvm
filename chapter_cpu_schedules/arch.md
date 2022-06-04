@@ -151,8 +151,9 @@ the latency to access L1 cache is less than 1 ns, the L2 cache's latency is arou
 :label:`fig_cpu_memory`
 
 A brief memory subsystem layout is illustrated in :numref:`fig_cpu_memory`.
-L1 and L2 caches are exclusive to each CPU core, and L3 cache is shared across the cores of the same CPU processor
-To processing on some data, a CPU will first check if the data exist at L1 cache, if not check L2 cache, if not check L3 cache, if not go to the main memory to retrieve the data and bring it all the way through L3 cache, L2 cache, and L1 cache, finally to the CPU registers.
+L1 and L2 caches are exclusive to each CPU core, and L3 cache is shared across the cores of the same CPU processor. 
+
+To process on some data, a CPU will first check if the data exist at L1 cache, if not check L2 cache, if not check L3 cache, if not go to the main memory to retrieve the data and bring it all the way through L3 cache, L2 cache, and L1 cache, finally to the CPU registers.
 This looks very expensive but luckily in practice, the programs have the [data locality patterns](https://en.wikipedia.org/wiki/Locality_of_reference) which will accelerate the data retrieving procedure. There are two types of locality: temporal locality and spatial locality.
 Temporal locality means that the data we just used usually would be used in the near future so that they may be still in cache. Spatial locality means that the adjacent data of the ones we just used are likely to be used in the near future. As the system always brings a block of values to the cache each time (see the concept of [cache lines](https://en.wikipedia.org/wiki/CPU_cache#CACHE-LINES)), those adjacent data may be still in cache when referenced to.
 Leveraging the advantage brought by data locality is one of the most important performance optimization principles we will describe in detail later.

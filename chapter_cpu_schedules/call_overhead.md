@@ -96,7 +96,7 @@ exe_times = np.array([bench_workload(np_copy(n).timeit) for n in sizes])
 print('NumPy call overhead: %.1f microsecond' % (exe_times.mean()*1e6))
 ```
 
-The overhead of TVM is higher but in the same order of magnitude.
+The overhead of TVM is lower but in the same order of magnitude.
 
 ```{.python .input  n=12}
 def tvm_copy(n):
