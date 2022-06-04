@@ -135,11 +135,11 @@ loaded_params = open(params_fn, "rb").read()
 And then construct the runtime as before to verify the results
 
 ```{.python .input  n=13}
-loaded_rt = tvm.contrib.graph_runtime.create(loaded_graph, loaded_mod, ctx)
+loaded_rt = tvm.contrib.graph_executor.create(loaded_graph, loaded_mod, ctx)
 loaded_rt.load_params(loaded_params)
 loaded_rt.run(data=tvm.nd.array(x))
 loaded_scores = loaded_rt.get_output(0).asnumpy()[0]
-tvm.testing.assert_allclose(loaded_scores, scores)
+np.testing.assert_allclose(loaded_scores, scores)
 ```
 
 ## Summary
