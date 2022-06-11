@@ -32,7 +32,7 @@ The code snippet to define `batch_norm` is as follows.
 
 ```{.python .input  n=2}
 # Save to the d2ltvm package.
-import topi
+import tvm.topi as topi
 
 def batch_norm(c, n, eps=1e-5):
     """batch normalization
