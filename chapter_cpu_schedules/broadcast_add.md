@@ -44,15 +44,15 @@ The following code block defines a benchmarking method for broadcast add of a sp
 # Save to the d2ltvm package.
 def bench_bcast_add_tvm(func, sizes, target):
     def workload(nrepeats):
-        timer = mod.time_evaluator(mod.entry_name, ctx=ctx, number=nrepeats)
+        dev = tvm.device(target)
+        timer = mod.time_evaluator(mod.entry_name, dev=dev, number=nrepeats)
         return timer(a, b, c).mean * nrepeats
     times = []
     for n in sizes:
         n = int(n)
         s, (A, B, C) = func(n)
         mod = tvm.build(s, [A, B, C], target)
-        ctx = tvm.context(target, 0)
-        a, b, c = d2ltvm.get_bcast_data((n, 1), (n, n), lambda x: tvm.nd.array(x, ctx=ctx))
+        a, b, c = d2ltvm.get_bcast_data((n, 1), (n, n), lambda x: tvm.nd.array(x))
         times.append(d2ltvm.bench_workload(workload))
     return sizes * sizes / 1e9 / np.array(times)
 ```
