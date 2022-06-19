@@ -76,16 +76,16 @@ Similar to the `bench_matmul_tvm` method implemented in :numref:`ch_matmul_cpu`,
 # Save to the d2ltvm package.
 def bench_conv_tvm(func, sizes, target):
     def workload(nrepeats):
-        timer = mod.time_evaluator(mod.entry_name, ctx=ctx, number=nrepeats)
+        dev = tvm.device(target)
+        timer = mod.time_evaluator(mod.entry_name, dev=dev, number=nrepeats)
         return timer(x, k, y).mean * nrepeats
     gflops, times = [], []
     for (c, n, k) in sizes:
         args = c, c, n, k, (k-1)//2, 1 # oc, ic, n, k, p, s
         s, (X, K, Y) = func(*args)
         mod = tvm.build(s, [X, K, Y], target)
-        ctx = tvm.context(target, 0)
         x, k, y = d2ltvm.get_conv_data(
-            *args, lambda x: tvm.nd.array(x, ctx=ctx))
+            *args, lambda x: tvm.nd.array(x))
         times.append(d2ltvm.bench_workload(workload))
         gflops.append(conv_gflop(*args))
     return np.array(gflops) / np.array(times)
