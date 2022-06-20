@@ -32,7 +32,7 @@ The code snippet to define `batch_norm` is as follows.
 
 ```{.python .input  n=2}
 # Save to the d2ltvm package.
-import topi
+import tvm.topi as topi
 
 def batch_norm(c, n, eps=1e-5):
     """batch normalization
@@ -103,7 +103,7 @@ mod(data, mean, var, gamma, beta, out)
 
 We use the `batch_norm` function of MXNet as the baseline to check the correctness of our compiled functions. 
 This function in MXNet was defined to be generic for both training and inference. In the inference case that we talk about here, we will need to set the corresponding input arguments properly. 
-One is $use_global_stats$, which needs to be set `True` as we will use the input mean and variance for `batch_norm` to compute instead of computing them from the input data (training will do so). 
+One is `use_global_stats`, which needs to be set `True` as we will use the input mean and variance for `batch_norm` to compute instead of computing them from the input data (training will do so). 
 The other is $fix\_gamma$, which needs to be set `False` so that the input $gamma$ will be used instead of setting $gamma$ to be all 1.
 
 Lastly, like we have discussed in other cases, MXNet `batch_norm` has input data in 4D, including batch as the outmost dimension. So we will expand this dimension in the data accordingly.

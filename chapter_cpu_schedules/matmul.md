@@ -51,14 +51,14 @@ To benchmark its performance, we also define a reusable method as we did in :num
 # Save to the d2ltvm package.
 def bench_matmul_tvm(func, sizes, target):
     def workload(nrepeats):
-        timer = mod.time_evaluator(mod.entry_name, ctx=ctx, number=nrepeats)
+        dev = tvm.device(target)
+        timer = mod.time_evaluator(mod.entry_name, dev=dev, number=nrepeats)
         return timer(a, b, c).mean * nrepeats
     times = []
     for n in sizes:
         s, (A, B, C) = func(int(n))
         mod = tvm.build(s, [A, B, C], target)
-        ctx = tvm.context(target, 0)
-        a, b, c = d2ltvm.get_abc((n, n), lambda x: tvm.nd.array(x, ctx=ctx))
+        a, b, c = d2ltvm.get_abc((n, n), lambda x: tvm.nd.array(x))
         times.append(d2ltvm.bench_workload(workload))
     return 2 * sizes**3 / 1e9 / np.array(times)
 ```
